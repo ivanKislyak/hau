@@ -4,6 +4,7 @@ from tkinter import ttk
 from pathlib import Path
 import sqlite3
 import os
+import datetime
 
 # DB
 BASE_DIR = Path(__file__).resolve().parent
@@ -48,7 +49,6 @@ base_bold16 = ("Helvetica", 16, 'bold')
 base14 = ("Helvetica", 14)
 base_bold14 = ("Helvetica", 14, 'bold')
 
-
 mainframe = tk.Frame(root, bg=white)
 mainframe.grid(column=0, row=0)
 
@@ -74,20 +74,21 @@ style.configure(
 )
 
 ############ ADDING PROPERTY ###############
-def new_property():
+def new_property(_event=None):
     add_property = Toplevel(root)
+    add_property.focus_force()
     add_property.title("Hau " + c_version + ' - adding property')
     #add_property.iconbitmap("assets/icons/hau_logo.ico")
     add_property.configure(bg="white")
     add_property.minsize(200, 200)
     add_property.columnconfigure(0, weight=1)
 
-    width, height = 400, 400
-    screen_width = add_property.winfo_screenwidth()
-    screen_height = add_property.winfo_screenheight()
-    x = (screen_width - width) // 2
-    y = (screen_height - height) // 2
-    add_property.geometry(f"{width}x{height}+{x}+{y}")
+    pr_width, pr_height = 400, 400
+    pr_screen_width = add_property.winfo_screenwidth()
+    pr_screen_height = add_property.winfo_screenheight()
+    pr_x = (pr_screen_width - pr_width) // 2
+    pr_y = (pr_screen_height - pr_height) // 2
+    add_property.geometry(f"{pr_width}x{pr_height}+{pr_x}+{pr_y}")
 
     add_property_frm = tk.Frame(add_property, bg=white)
     add_property_frm.grid(row=0, column=0)
@@ -149,25 +150,52 @@ def new_property():
     add_pr_btn = ttk.Button(add_property_frm, width=10, text='+', style='CustomHelvetica.TButton')
     add_pr_btn.grid(column=0, row=8, columnspan=3, sticky='N', padx=5, pady=20)
 
+    def close_window(_event):
+        add_property.destroy()
+
+    add_property.bind("<Control-Z>", close_window)
+    add_property.bind("<Control-z>", close_window)
+
 ############ END OF ADDING PROPERTY ###############
+with sqlite3.connect(DB_PATH) as sql_conn:
+    cursor = sql_conn.cursor()
+    cursor.execute("""SELECT * FROM properties""")
+    if not cursor.fetchall():
+        main_label = ttk.Label(mainframe, text="No properties found", font=base_bold18, foreground=dp_sea)
+        main_label.configure(background=white)
+        main_label.grid(column=1, row=1, sticky=NS)
 
-main_label = ttk.Label(mainframe, text="No properties found", font=base_bold18, foreground=dp_sea)
-main_label.configure(background=white)
-main_label.grid(column=1, row=1, sticky=NS)
+        lets_add_btn = ttk.Button(mainframe, text="Let's add!", command=new_property, style='CustomHelvetica.TButton')
+        lets_add_btn.grid(column=1, row=2, sticky=NS)
 
-lets_add_btn = ttk.Button(mainframe, text="Let's add!", command=new_property, style='CustomHelvetica.TButton')
-lets_add_btn.grid(column=1, row=2, sticky=NS)
+        root.columnconfigure(0, weight=1)
+        root.rowconfigure(0, weight=1)
+        mainframe.columnconfigure(2, weight=1)
 
-root.columnconfigure(0, weight=1)
-root.rowconfigure(0, weight=1)
-mainframe.columnconfigure(2, weight=1)
+        for child in mainframe.winfo_children():
+            child.grid_configure(padx=5, pady=5)
 
-for child in mainframe.winfo_children():
-    child.grid_configure(padx=5, pady=5)
-#
-# feet_entry.focus()
-# root.bind("<Enter>", calculate)
-root.bind('Enter')
+        # feet_entry.focus()
+        # root.bind("<Enter>", calculate)
+        root.bind("<Return>", new_property)
+    else:
+        main_label = ttk.Label(mainframe, text="Your properties:", font=base_bold18, foreground=dp_sea)
+        main_label.configure(background=white)
+        main_label.grid(column=1, row=1, sticky=NS)
+
+        lets_add_btn = ttk.Button(mainframe, text="Add more", command=new_property, style='CustomHelvetica.TButton')
+        lets_add_btn.grid(column=1, row=2, sticky=NS)
+
+        root.columnconfigure(0, weight=1)
+        root.rowconfigure(0, weight=1)
+        mainframe.columnconfigure(2, weight=1)
+
+        for child in mainframe.winfo_children():
+            child.grid_configure(padx=5, pady=5)
+        #
+        # feet_entry.focus()
+        # root.bind("<Enter>", calculate)
+        root.bind('<Return>', new_property)
 
 if __name__ == '__main__':
     db()
