@@ -27,7 +27,9 @@ root = tk.Tk()
 root.title("Hau " + c_version)
 root.iconbitmap(default="assets/icons/hau_logo.ico")
 root.configure(bg="white")
-root.minsize(250, 100)
+root.minsize(380, 200)
+root.columnconfigure(0, weight=1)
+root.rowconfigure(0, weight=1)
 
 width, height = 500, 200
 screen_width = root.winfo_screenwidth()
@@ -49,14 +51,22 @@ base_bold16 = ("Helvetica", 16, 'bold')
 base14 = ("Helvetica", 14)
 base_bold14 = ("Helvetica", 14, 'bold')
 
-mainframe = tk.Frame(root, bg=white)
-mainframe.grid(column=0, row=0)
+mainframe = tk.Frame(root, bg='white')
+mainframe.grid(column=0, row=0, sticky='nsew')
+mainframe.grid_rowconfigure(0, weight=1)
+mainframe.grid_columnconfigure(0, weight=1)
 
 # Style
 style = ttk.Style()
 style.configure(
     "CustomHelvetica.TLabel",
     font=base18,
+    foreground=black,
+    background=white
+)
+style.configure(
+    "CustomHelvetica14.TLabel",
+    font=base14,
     foreground=black,
     background=white
 )
@@ -157,44 +167,81 @@ def new_property(_event=None):
     add_property.bind("<Control-z>", close_window)
 
 ############ END OF ADDING PROPERTY ###############
+main_canvas = tk.Canvas(mainframe, bg='white', borderwidth=0, highlightthickness=0)
+main_canvas.grid(column=0, row=0, sticky='nsew')
+
+canvas_fr = tk.Frame(main_canvas, bg='white', borderwidth=0)
+canvas_fr.grid_columnconfigure(0, weight=1)
+canvas_fr.grid_rowconfigure(0, weight=1)
+
+canvas_window = main_canvas.create_window((0, 0), window=canvas_fr, anchor="nw")
+
+scrollbar = tk.Scrollbar(mainframe, orient="vertical", command=main_canvas.yview)
+scrollbar.grid(row=0, column=1, sticky="ns")
+
+main_canvas.configure(yscrollcommand=scrollbar.set)
+
+canvas_fr.bind(
+    "<Configure>",
+    lambda e: main_canvas.configure(scrollregion=main_canvas.bbox("all"))
+)
+
+main_canvas.bind(
+    "<Configure>",
+    lambda e: main_canvas.itemconfigure(canvas_window, width=e.width)
+)
+
+# Loading real estate listings on the home screen
 with sqlite3.connect(DB_PATH) as sql_conn:
     cursor = sql_conn.cursor()
     cursor.execute("""SELECT * FROM properties""")
+
     if not cursor.fetchall():
-        main_label = ttk.Label(mainframe, text="No properties found", font=base_bold18, foreground=dp_sea)
+        main_label = ttk.Label(canvas_fr, text="No properties found", font=base_bold18, foreground=dp_sea)
         main_label.configure(background=white)
-        main_label.grid(column=1, row=1, sticky=NS)
+        main_label.grid(column=0, row=1, sticky=NS)
 
-        lets_add_btn = ttk.Button(mainframe, text="Let's add!", command=new_property, style='CustomHelvetica.TButton')
-        lets_add_btn.grid(column=1, row=2, sticky=NS)
+        lets_add_btn = ttk.Button(canvas_fr, text="Let's add!", command=new_property, style='CustomHelvetica.TButton')
+        lets_add_btn.grid(column=0, row=2, sticky=NS)
 
-        root.columnconfigure(0, weight=1)
-        root.rowconfigure(0, weight=1)
-        mainframe.columnconfigure(2, weight=1)
-
-        for child in mainframe.winfo_children():
-            child.grid_configure(padx=5, pady=5)
-
-        # feet_entry.focus()
-        # root.bind("<Enter>", calculate)
         root.bind("<Return>", new_property)
     else:
-        main_label = ttk.Label(mainframe, text="Your properties:", font=base_bold18, foreground=dp_sea)
+        main_label = ttk.Label(canvas_fr, text="Your properties:", font=base_bold18, foreground=dp_sea)
         main_label.configure(background=white)
-        main_label.grid(column=1, row=1, sticky=NS)
+        main_label.grid(column=0, row=1, sticky=NS)
 
-        lets_add_btn = ttk.Button(mainframe, text="Add more", command=new_property, style='CustomHelvetica.TButton')
-        lets_add_btn.grid(column=1, row=2, sticky=NS)
+        # Cards of properties
+        with sqlite3.connect(DB_PATH) as sql_conn3:
+            cursor = sql_conn3.cursor()
+            cursor.execute("""SELECT * FROM properties""")
+            a = 2
+            frame_w = mainframe.winfo_screenmmwidth() * 0.8
+            for properties in cursor.fetchall():
+                cursor.execute("""SELECT * FROM hau_values WHERE hau_v_id = ?""", (properties[3],))
+                hau_values = cursor.fetchall()
+                card_fr = tk.Frame(canvas_fr, relief="solid", background='white', width=frame_w, height=150, border=1, pady=10)
+                card_fr.grid(column=0, row=a, padx=5, pady=5)
+                card_fr.grid_propagate(False)
+                name_lb = ttk.Label(card_fr, text=properties[1], style='CustomHelvetica14.TLabel', justify='center')
+                name_lb.grid(row=0, column=0, columnspan=3)
 
-        root.columnconfigure(0, weight=1)
-        root.rowconfigure(0, weight=1)
-        mainframe.columnconfigure(2, weight=1)
+                type_text = 'Category: Flat' if properties[0] == 1 else 'Category: House'
+
+                type_lb = ttk.Label(card_fr, text=type_text, style='CustomHelvetica14.TLabel')
+                type_lb.grid(row=1, column=0, sticky=W)
+
+                gas_txt = f'Gas: {hau_values[0][1]}'
+                gas_lb = ttk.Label(card_fr, text=gas_txt, style='CustomHelvetica14.TLabel')
+                gas_lb.grid(row=2, column=0, sticky=W)
+
+                a +=1
+
+        lets_add_btn = ttk.Button(canvas_fr, text="Add more", command=new_property, style='CustomHelvetica.TButton')
+        lets_add_btn.grid(column=0, row=a, sticky=NS, pady=10, padx=10)
 
         for child in mainframe.winfo_children():
             child.grid_configure(padx=5, pady=5)
-        #
-        # feet_entry.focus()
-        # root.bind("<Enter>", calculate)
+
         root.bind('<Return>', new_property)
 
 if __name__ == '__main__':
