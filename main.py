@@ -215,6 +215,7 @@ with sqlite3.connect(DB_PATH) as sql_conn:
             cursor.execute("""SELECT * FROM properties""")
             a = 2
             frame_w = mainframe.winfo_screenmmwidth() * 0.8
+
             for properties in cursor.fetchall():
                 cursor.execute("""SELECT * FROM hau_values WHERE hau_v_id = ?""", (properties[3],))
                 hau_values = cursor.fetchall()
@@ -223,47 +224,21 @@ with sqlite3.connect(DB_PATH) as sql_conn:
                 card_fr.grid_columnconfigure(0, minsize=400)
 
                 name_lb = ttk.Label(card_fr, text=properties[1], style='CustomHelvetica14.TLabel', justify='center')
-                name_lb.grid(row=0, column=0, sticky='ew', columnspan=2)
+                name_lb.grid(row=0, column=0, columnspan=2, pady=3)
 
                 type_text = 'Category: Flat' if properties[0] == 1 else 'Category: House'
 
                 type_lb = ttk.Label(card_fr, text=type_text, style='CustomHelvetica14.TLabel')
                 type_lb.grid(row=1, column=0, sticky=W)
 
-                if hau_values[0][1]:
-                    gas_txt = f'Gas: {hau_values[0][1]}'
-                    gas_lb = ttk.Label(card_fr, text=gas_txt, style='CustomHelvetica14.TLabel')
-                    gas_lb.grid(row=2, column=0, sticky=W)
-                else:
-                    pass
-
-                if hau_values[0][2]:
-                    water_txt = f'Water: {hau_values[0][2]}'
-                    water_lb = ttk.Label(card_fr, text=water_txt, style='CustomHelvetica14.TLabel')
-                    water_lb.grid(row=3, column=0, sticky=W)
-                else:
-                    pass
-
-                if hau_values[0][3]:
-                    electricity_txt = f'Electricity: {hau_values[0][3]}'
-                    electricity_lb = ttk.Label(card_fr, text=electricity_txt, style='CustomHelvetica14.TLabel')
-                    electricity_lb.grid(row=4, column=0, sticky=W)
-                else:
-                    pass
-
-                if hau_values[0][4]:
-                    heating_txt = f'Heating: {hau_values[0][4]}'
-                    heating_lb = ttk.Label(card_fr, text=heating_txt, style='CustomHelvetica14.TLabel')
-                    heating_lb.grid(row=5, column=0, sticky=W)
-                else:
-                    pass
-
-                if hau_values[0][5]:
-                    garbage_txt = f'Garbage: {hau_values[0][5]}'
-                    garbage_lb = ttk.Label(card_fr, text=garbage_txt, style='CustomHelvetica14.TLabel')
-                    garbage_lb.grid(row=6, column=0, sticky=W)
-                else:
-                    pass
+                pastes = ['Gas', 'Water', 'Electricity', 'Heating', 'Garbage']
+                req_values = hau_values[0][1:]
+                rcount = 2
+                for name, value in zip(pastes, req_values):
+                    if value:
+                        txt = f'{name}: {value}'
+                        ttk.Label(card_fr, text=txt, style='CustomHelvetica14.TLabel').grid(row=rcount, column=0, sticky=W)
+                        rcount += 1
 
                 a +=1
 
