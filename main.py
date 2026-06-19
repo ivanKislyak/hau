@@ -28,7 +28,7 @@ root = tk.Tk()
 root.title("Hau " + c_version)
 root.iconbitmap(default="assets/icons/hau_logo.ico")
 root.configure(bg="white")
-root.minsize(380, 300)
+root.minsize(500, 300)
 root.columnconfigure(0, weight=1)
 root.rowconfigure(0, weight=1)
 
@@ -157,8 +157,6 @@ def new_property(_event=None):
     pr_garbage_btn = ttk.Button(add_property_frm, text='⚙️', width=3)
     pr_garbage_btn.grid(column=2, row=7, sticky="e", padx=10)
 
-    add_property.bind('<Key>', lambda e: print(e))
-
     def add_record():
         if not pr_name_entry.get():
             return messagebox.showerror('Error', 'The “Name” field is required', parent=add_property_frm)
@@ -219,8 +217,16 @@ main_canvas.bind(
 canvas_fr.bind('<Down>', lambda e: main_canvas.configure(scrollregion=main_canvas.bbox("all")))
 canvas_fr.bind('<Down>', lambda e: print('was pressed down'))
 
+def yes_del(pr_id):
+    with sqlite3.connect(DB_PATH) as sql_del_info:
+        cur = sql_del_info.cursor()
+        cur.execute("""DELETE FROM properties WHERE id=?""", (pr_id,))
+    refresh_cards()
+
 # Loading real estate listings on the home screen
 def refresh_cards():
+    for ch in canvas_fr.winfo_children():
+        ch.destroy()
     with sqlite3.connect(DB_PATH) as sql_conn:
         cursor = sql_conn.cursor()
         cursor.execute("""SELECT * FROM properties""")
@@ -251,23 +257,34 @@ def refresh_cards():
                     card_fr = tk.Frame(canvas_fr, relief="solid", background='white', border=1, pady=10)
                     card_fr.grid(column=0, row=a, padx=5, pady=5)
                     card_fr.grid_columnconfigure(0, minsize=400)
+                    card_fr.configure(width=400)
 
                     name_lb = ttk.Label(card_fr, text=properties[1], style='CustomHelvetica14.TLabel', justify='center')
-                    name_lb.grid(row=0, column=0, columnspan=2, pady=3)
+                    name_lb.grid(row=0, column=0, columnspan=3, pady=3)
 
                     type_text = 'Category: Flat' if properties[2] == 1 else 'Category: House'
 
                     type_lb = ttk.Label(card_fr, text=type_text, style='CustomHelvetica14.TLabel')
-                    type_lb.grid(row=1, column=0, sticky=W)
+                    type_lb.grid(row=1, column=0, sticky=W, padx=(10, 0))
 
                     pastes = ['Gas', 'Water', 'Electricity', 'Heating', 'Garbage']
                     req_values = hau_values[0][1:]
                     rcount = 2
+
                     for name, value in zip(pastes, req_values):
                         if value:
                             txt = f'{name}: {value}'
-                            ttk.Label(card_fr, text=txt, style='CustomHelvetica14.TLabel').grid(row=rcount, column=0, sticky=W)
+                            ttk.Label(card_fr, text=txt, style='CustomHelvetica14.TLabel').grid(row=rcount, column=0, sticky=W, padx=(10, 0))
                             rcount += 1
+
+                    def del_pr():
+                        am = messagebox.askquestion('4444', '5555555')
+                        if am == 'yes':
+                            yes_del(properties[0])
+
+                    del_pr_btn = ttk.Button(card_fr, text='🗑️', style='CustomHelvetica.TButton', command=del_pr)
+                    del_pr_btn.grid(column=2, row=rcount // 2, sticky='e', padx=(0, 20))
+                    del_pr_btn.configure(width=2)
 
                     a +=1
 
