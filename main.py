@@ -4,7 +4,6 @@ from tkinter import ttk
 from tkinter import messagebox
 from pathlib import Path
 import sqlite3
-import os
 from datetime import date
 
 # DB
@@ -84,6 +83,80 @@ style.configure(
     background=white
 )
 
+# Loading real estate listings on the home screen
+def refresh_cards():
+    for ch in canvas_fr.winfo_children():
+        ch.destroy()
+    with sqlite3.connect(DB_PATH) as sql_conn:
+        cursor = sql_conn.cursor()
+        cursor.execute("""SELECT * FROM properties""")
+
+        if not cursor.fetchall():
+
+            main_label = ttk.Label(canvas_fr, text="No properties found", font=base_bold18, foreground=dp_sea)
+            main_label.configure(background=white)
+            main_label.grid(column=0, row=0)
+
+            lets_add_btn = ttk.Button(canvas_fr, text="Let's add!", command=new_property, style='CustomHelvetica.TButton')
+            lets_add_btn.grid(column=0, row=1)
+
+            root.bind("<Return>", new_property)
+        else:
+            main_label = ttk.Label(canvas_fr, text="Your properties:", font=base_bold18, foreground=dp_sea)
+            main_label.configure(background=white)
+            main_label.grid(column=0, row=1, sticky=NS)
+
+            # Cards of properties
+            with sqlite3.connect(DB_PATH) as sql_conn3:
+                cursor = sql_conn3.cursor()
+                cursor.execute("""SELECT * FROM properties""")
+                a = 2
+
+                for properties in cursor.fetchall():
+                    cursor.execute("""SELECT * FROM hau_values WHERE hau_v_id = ?""", (properties[3],))
+                    hau_values = cursor.fetchall()
+                    card_fr = tk.Frame(canvas_fr, relief="solid", background='white', border=1, pady=10)
+                    card_fr.grid(column=0, row=a, padx=5, pady=5)
+                    card_fr.grid_columnconfigure(0, minsize=400)
+                    card_fr.configure(width=400)
+
+                    name_lb = ttk.Label(card_fr, text=properties[1], style='CustomHelvetica14.TLabel', justify='center')
+                    name_lb.grid(row=0, column=0, columnspan=3, pady=3)
+
+                    type_text = 'Category: Flat' if properties[2] == 1 else 'Category: House'
+
+                    type_lb = ttk.Label(card_fr, text=type_text, style='CustomHelvetica14.TLabel')
+                    type_lb.grid(row=1, column=0, sticky=W, padx=(10, 0))
+
+                    pastes = ['Gas', 'Water', 'Electricity', 'Heating', 'Garbage']
+                    req_values = hau_values[0][1:]
+                    rcount = 2
+
+                    for name, value in zip(pastes, req_values):
+                        if value:
+                            txt = f'{name}: {value}'
+                            ttk.Label(card_fr, text=txt, style='CustomHelvetica14.TLabel').grid(row=rcount, column=0, sticky=W, padx=(10, 0))
+                            rcount += 1
+
+                    def del_pr():
+                        am = messagebox.askquestion('', 'Are you sure for deleting?')
+                        if am == 'yes':
+                            yes_del(properties[0])
+
+                    del_pr_btn = ttk.Button(card_fr, text='🗑️', style='CustomHelvetica.TButton', command=del_pr)
+                    del_pr_btn.grid(column=2, row=rcount // 2, sticky='e', padx=(0, 20))
+                    del_pr_btn.configure(width=2)
+
+                    a +=1
+
+            lets_add_btn = ttk.Button(canvas_fr, text="Add more", command=new_property, style='CustomHelvetica.TButton')
+            lets_add_btn.grid(column=0, row=a, sticky=NS, pady=10, padx=10)
+
+            for child in mainframe.winfo_children():
+                child.grid_configure(padx=5, pady=5)
+
+            root.bind('<Return>', new_property)
+
 ############ ADDING PROPERTY ###############
 def new_property(_event=None):
     add_property = Toplevel(root)
@@ -158,13 +231,19 @@ def new_property(_event=None):
     pr_garbage_btn.grid(column=2, row=7, sticky="e", padx=10)
 
     def add_record():
+        conn = sqlite3.connect(DB_PATH)
+        cursor = conn.cursor()
+        cursor.execute("SELECT seq FROM sqlite_sequence WHERE name='properties'")
+        row = cursor.fetchone()
+        next_pr_id = (row[0] + 1) if row else 1
+
         if not pr_name_entry.get():
             return messagebox.showerror('Error', 'The “Name” field is required', parent=add_property_frm)
 
         with sqlite3.connect(DB_PATH) as add_sql_conn:
             add_cursor = add_sql_conn.cursor()
-            add_cursor.execute("""INSERT INTO hau_values (gas, water, electricity, heating, garbage, date) VALUES (?, ?, ?, ?, ?, ?)""",
-                               (pr_gas_entry.get(), pr_water_entry.get(), pr_electricity_entry.get(), pr_heating_entry.get(), pr_garbage_entry.get(), str(date.today())))
+            add_cursor.execute("""INSERT INTO hau_values (gas, water, electricity, heating, garbage, date, pr_id) VALUES (?, ?, ?, ?, ?, ?, ?)""",
+                               (pr_gas_entry.get(), pr_water_entry.get(), pr_electricity_entry.get(), pr_heating_entry.get(), pr_garbage_entry.get(), str(date.today()), next_pr_id))
 
         def lat_hau_id() -> int:
             with sqlite3.connect(DB_PATH) as whid_add_sql_conn:
@@ -178,7 +257,8 @@ def new_property(_event=None):
                                    (pr_name_entry.get(), 1 if property_type.get() == 'Flat' else 2, lat_hau_id()))
 
         add_property.destroy()
-        refresh_cards()
+        conn.commit()
+        return refresh_cards()
 
     add_pr_btn = ttk.Button(add_property_frm, width=10, text='+', style='CustomHelvetica.TButton', command=add_record)
     add_pr_btn.grid(column=0, row=8, columnspan=3, sticky='N', padx=5, pady=20)
@@ -192,12 +272,15 @@ def new_property(_event=None):
 ############ END OF ADDING PROPERTY ###############
 main_canvas = tk.Canvas(mainframe, bg='white', borderwidth=0, highlightthickness=0)
 main_canvas.grid(column=0, row=0, sticky='nsew')
+main_canvas.rowconfigure(0, weight=1)
+main_canvas.columnconfigure(0, weight=1)
 
 canvas_fr = tk.Frame(main_canvas, bg='white', borderwidth=0)
-canvas_fr.grid_columnconfigure(0, weight=1)
-canvas_fr.grid_rowconfigure(0, weight=1)
+canvas_fr.columnconfigure(0, weight=1)
+canvas_fr.rowconfigure(0, weight=1)
+canvas_fr.rowconfigure(1, weight=1)
 
-canvas_window = main_canvas.create_window((0, 0), window=canvas_fr, anchor="nw")
+canvas_window = main_canvas.create_window((0, 0), window=canvas_fr, anchor="n")
 
 scrollbar = tk.Scrollbar(mainframe, orient="vertical", command=main_canvas.yview)
 scrollbar.grid(row=0, column=1, sticky="ns")
@@ -222,79 +305,6 @@ def yes_del(pr_id):
         cur = sql_del_info.cursor()
         cur.execute("""DELETE FROM properties WHERE id=?""", (pr_id,))
     refresh_cards()
-
-# Loading real estate listings on the home screen
-def refresh_cards():
-    for ch in canvas_fr.winfo_children():
-        ch.destroy()
-    with sqlite3.connect(DB_PATH) as sql_conn:
-        cursor = sql_conn.cursor()
-        cursor.execute("""SELECT * FROM properties""")
-
-        if not cursor.fetchall():
-            main_label = ttk.Label(canvas_fr, text="No properties found", font=base_bold18, foreground=dp_sea)
-            main_label.configure(background=white)
-            main_label.grid(column=0, row=1, sticky=NS)
-
-            lets_add_btn = ttk.Button(canvas_fr, text="Let's add!", command=new_property, style='CustomHelvetica.TButton')
-            lets_add_btn.grid(column=0, row=2, sticky=NS)
-
-            root.bind("<Return>", new_property)
-        else:
-            main_label = ttk.Label(canvas_fr, text="Your properties:", font=base_bold18, foreground=dp_sea)
-            main_label.configure(background=white)
-            main_label.grid(column=0, row=1, sticky=NS)
-
-            # Cards of properties
-            with sqlite3.connect(DB_PATH) as sql_conn3:
-                cursor = sql_conn3.cursor()
-                cursor.execute("""SELECT * FROM properties""")
-                a = 2
-
-                for properties in cursor.fetchall():
-                    cursor.execute("""SELECT * FROM hau_values WHERE hau_v_id = ?""", (properties[3],))
-                    hau_values = cursor.fetchall()
-                    card_fr = tk.Frame(canvas_fr, relief="solid", background='white', border=1, pady=10)
-                    card_fr.grid(column=0, row=a, padx=5, pady=5)
-                    card_fr.grid_columnconfigure(0, minsize=400)
-                    card_fr.configure(width=400)
-
-                    name_lb = ttk.Label(card_fr, text=properties[1], style='CustomHelvetica14.TLabel', justify='center')
-                    name_lb.grid(row=0, column=0, columnspan=3, pady=3)
-
-                    type_text = 'Category: Flat' if properties[2] == 1 else 'Category: House'
-
-                    type_lb = ttk.Label(card_fr, text=type_text, style='CustomHelvetica14.TLabel')
-                    type_lb.grid(row=1, column=0, sticky=W, padx=(10, 0))
-
-                    pastes = ['Gas', 'Water', 'Electricity', 'Heating', 'Garbage']
-                    req_values = hau_values[0][1:]
-                    rcount = 2
-
-                    for name, value in zip(pastes, req_values):
-                        if value:
-                            txt = f'{name}: {value}'
-                            ttk.Label(card_fr, text=txt, style='CustomHelvetica14.TLabel').grid(row=rcount, column=0, sticky=W, padx=(10, 0))
-                            rcount += 1
-
-                    def del_pr():
-                        am = messagebox.askquestion('4444', '5555555')
-                        if am == 'yes':
-                            yes_del(properties[0])
-
-                    del_pr_btn = ttk.Button(card_fr, text='🗑️', style='CustomHelvetica.TButton', command=del_pr)
-                    del_pr_btn.grid(column=2, row=rcount // 2, sticky='e', padx=(0, 20))
-                    del_pr_btn.configure(width=2)
-
-                    a +=1
-
-            lets_add_btn = ttk.Button(canvas_fr, text="Add more", command=new_property, style='CustomHelvetica.TButton')
-            lets_add_btn.grid(column=0, row=a, sticky=NS, pady=10, padx=10)
-
-            for child in mainframe.winfo_children():
-                child.grid_configure(padx=5, pady=5)
-
-            root.bind('<Return>', new_property)
 
 if __name__ == '__main__':
     db()
