@@ -143,8 +143,12 @@ def refresh_cards():
                         if am == 'yes':
                             yes_del(properties[0])
 
+                    new_hau_v = ttk.Button(card_fr, text='✏️',  style='CustomHelvetica.TButton', command=lambda v=properties[0]: redact_pr(v))
+                    new_hau_v.grid(column=2, row=(rcount // 2)-1, sticky='e', padx=(0, 20))
+                    new_hau_v.configure(width=2)
+
                     del_pr_btn = ttk.Button(card_fr, text='🗑️', style='CustomHelvetica.TButton', command=del_pr)
-                    del_pr_btn.grid(column=2, row=rcount // 2, sticky='e', padx=(0, 20))
+                    del_pr_btn.grid(column=2, row=(rcount // 2)+1, sticky='e', padx=(0, 20))
                     del_pr_btn.configure(width=2)
 
                     a +=1
@@ -156,6 +160,106 @@ def refresh_cards():
                 child.grid_configure(padx=5, pady=5)
 
             root.bind('<Return>', new_property)
+
+def redact_pr(pr_id):
+    red_conn = sqlite3.connect(DB_PATH)
+    r_cursor = red_conn.cursor()
+    r_cursor.execute("""SELECT * FROM properties WHERE id = ?""", (pr_id,))
+    pr_info = r_cursor.fetchone()
+    r_cursor.execute("""SELECT * FROM hau_values WHERE hau_v_id = ?""", (pr_info[-1],))
+    hau_v_info = r_cursor.fetchone()
+
+    red_conn.commit()
+    red_pr = Toplevel(root)
+    red_pr.focus_force()
+    red_pr.title(f'Updating values for {pr_info[1]}')
+    red_pr.minsize(200, 200)
+
+    rpr_width, rpr_height = 400, 400
+    rpr_screen_width = red_pr.winfo_screenwidth()
+    rpr_screen_height = red_pr.winfo_screenheight()
+    rpr_x = (rpr_screen_width - rpr_width) // 2
+    rpr_y = (rpr_screen_height - rpr_height) // 2
+    red_pr.geometry(f"{rpr_width}x{rpr_height}+{rpr_x}+{rpr_y}")
+
+    # FROM ADD_PROPERTY
+    pr_name, pr_type = pr_info[1:3]
+    pr_gas, pr_water, pr_electro, pr_heating, pr_garbage, pr_date = hau_v_info[2:]
+
+    str_var = StringVar(value=pr_name)
+    str_var.set(pr_name)
+
+    red_property_frm = tk.Frame(red_pr, bg=white)
+    red_property_frm.grid(row=0, column=0)
+
+    property_types = ['Flat', 'House']
+    property_type = ttk.Combobox(red_property_frm, values=property_types, style='CustomHelvetica.TCombobox',
+                                 font=base18, state='readonly', justify='center')
+    property_type.grid(column=0, row=0, pady=10, columnspan=3)
+    property_type.current(pr_type-1)
+
+    name_frm = tk.Frame(red_property_frm, bg=white)
+    name_frm.grid(row=1, column=0, sticky='w')
+
+    rpr_name_label = ttk.Label(name_frm, text='Name', style='CustomHelvetica.TLabel')
+    rpr_name_label.grid(column=0, row=0, padx=10)
+    ttk.Label(name_frm, text='*', foreground='red', background='white', font=("Helvetica", 14)).grid(column=1, row=0)
+
+    rpr_name_entry = ttk.Entry(red_property_frm, font=base14, foreground=black, background=white)
+    rpr_name_entry.grid(column=1, row=1, sticky="e")
+    rpr_name_entry.insert(0, pr_name)
+
+    fill_info = ttk.Label(red_property_frm, text='Fill in the current values', font=("Helvetica", 14, 'bold'),
+                          foreground='darkgrey', background='white')
+    fill_info.grid(column=0, row=2, columnspan=2, sticky="w", padx=10)
+
+    rpr_gas_label = ttk.Label(red_property_frm, text='Gas', style='CustomHelvetica.TLabel')
+    rpr_gas_label.grid(column=0, row=3, sticky="w", padx=10)
+
+    rpr_gas_entry = ttk.Entry(red_property_frm, font=base14, foreground=black, background=white)
+    rpr_gas_entry.grid(column=1, row=3, sticky="e")
+    rpr_gas_entry.insert(0, pr_gas)
+
+    rpr_water_label = ttk.Label(red_property_frm, text='Water', style='CustomHelvetica.TLabel')
+    rpr_water_label.grid(column=0, row=4, sticky="w", padx=10)
+
+    rpr_water_entry = ttk.Entry(red_property_frm, font=base14, foreground=black, background=white)
+    rpr_water_entry.grid(column=1, row=4, sticky="e")
+    rpr_water_entry.insert(0, pr_water)
+
+    rpr_electricity_label = ttk.Label(red_property_frm, text='Electricity', style='CustomHelvetica.TLabel')
+    rpr_electricity_label.grid(column=0, row=5, sticky="w", padx=10)
+
+    rpr_electricity_entry = ttk.Entry(red_property_frm, font=base14, foreground=black, background=white)
+    rpr_electricity_entry.grid(column=1, row=5, sticky="e")
+    rpr_electricity_entry.insert(0, pr_electro)
+
+    rpr_heating_label = ttk.Label(red_property_frm, text='Heating', style='CustomHelvetica.TLabel')
+    rpr_heating_label.grid(column=0, row=6, sticky="w", padx=10)
+
+    rpr_heating_entry = ttk.Entry(red_property_frm, font=base14, foreground=black, background=white)
+    rpr_heating_entry.grid(column=1, row=6, sticky="e")
+    rpr_heating_entry.insert(0, pr_heating)
+
+    rpr_heating_btn = ttk.Button(red_property_frm, text='⚙️', width=3)
+    rpr_heating_btn.grid(column=2, row=6, sticky="e", padx=10)
+
+    rpr_garbage_label = ttk.Label(red_property_frm, text='Garbage', style='CustomHelvetica.TLabel')
+    rpr_garbage_label.grid(column=0, row=7, sticky="w", padx=10)
+
+    rpr_garbage_entry = ttk.Entry(red_property_frm, font=base14, foreground=black, background=white)
+    rpr_garbage_entry.grid(column=1, row=7, sticky="e")
+    rpr_garbage_entry.insert(0, pr_garbage)
+
+    rpr_garbage_btn = ttk.Button(red_property_frm, text='⚙️', width=3)
+    rpr_garbage_btn.grid(column=2, row=7, sticky="e", padx=10)
+
+    def update_values(property_id):
+        update_conn = sqlite3.connect(DB_PATH)
+        u_cursor = update_conn.cursor()
+
+    rpr_update_values_btn = ttk.Button(red_property_frm, text='Update values', command=lambda property_id=pr_info[0]: update_values(property_id))
+    rpr_update_values_btn.grid(column=0, columnspan=2, row=8, sticky=N, pady=10)
 
 ############ ADDING PROPERTY ###############
 def new_property(_event=None):
