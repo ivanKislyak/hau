@@ -164,8 +164,10 @@ def refresh_cards():
 def redact_pr(pr_id):
     red_conn = sqlite3.connect(DB_PATH)
     r_cursor = red_conn.cursor()
+
     r_cursor.execute("""SELECT * FROM properties WHERE id = ?""", (pr_id,))
     pr_info = r_cursor.fetchone()
+
     r_cursor.execute("""SELECT * FROM hau_values WHERE hau_v_id = ?""", (pr_info[-1],))
     hau_v_info = r_cursor.fetchone()
 
@@ -182,7 +184,6 @@ def redact_pr(pr_id):
     rpr_y = (rpr_screen_height - rpr_height) // 2
     red_pr.geometry(f"{rpr_width}x{rpr_height}+{rpr_x}+{rpr_y}")
 
-    # FROM ADD_PROPERTY
     pr_name, pr_type = pr_info[1:3]
     pr_gas, pr_water, pr_electro, pr_heating, pr_garbage, pr_date = hau_v_info[2:]
 
@@ -254,11 +255,21 @@ def redact_pr(pr_id):
     rpr_garbage_btn = ttk.Button(red_property_frm, text='⚙️', width=3)
     rpr_garbage_btn.grid(column=2, row=7, sticky="e", padx=10)
 
-    def update_values(property_id):
+    def update_values():
         update_conn = sqlite3.connect(DB_PATH)
         u_cursor = update_conn.cursor()
+        u_cursor.execute("""INSERT INTO hau_values (pr_id, gas, water, electricity, heating, garbage, date) VALUES (?, ?, ?, ?, ?, ?, ?)""",
+                         (pr_id, rpr_gas_entry.get(), rpr_water_entry.get(), rpr_electricity_entry.get(), rpr_heating_entry.get(), rpr_garbage_entry.get(), str(date.today())))
+        update_conn.commit()
 
-    rpr_update_values_btn = ttk.Button(red_property_frm, text='Update values', command=lambda property_id=pr_info[0]: update_values(property_id))
+        u_cursor.execute("""SELECT * FROM hau_values WHERE pr_id = ? ORDER BY hau_v_id DESC""", (pr_id,))
+        u_cursor.execute("""UPDATE properties set hau_v_id = ? WHERE id = ?""", (u_cursor.fetchone()[0], pr_id))
+        update_conn.commit()
+
+        red_pr.destroy()
+        refresh_cards()
+
+    rpr_update_values_btn = ttk.Button(red_property_frm, text='Update values', command=update_values)
     rpr_update_values_btn.grid(column=0, columnspan=2, row=8, sticky=N, pady=10)
 
 ############ ADDING PROPERTY ###############
