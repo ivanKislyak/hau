@@ -5,8 +5,6 @@ from tkinter import messagebox
 from pathlib import Path
 import sqlite3
 from datetime import date
-from tkinter.messagebox import showerror
-
 from PIL import Image, ImageTk
 
 # DB
@@ -89,7 +87,6 @@ def on_mouse_wheel(event):
 
 root.bind("<MouseWheel>", on_mouse_wheel)
 root.bind('<Down>', on_mouse_wheel)
-canvas_fr.bind('<Down>', lambda e: print('was pressed down'))
 
 # Style
 style = ttk.Style()
@@ -172,6 +169,10 @@ def refresh_cards():
                             ttk.Label(card_fr, text=txt, style='CustomHelvetica14.TLabel').grid(row=rcount, column=0, sticky=W, padx=(10, 0))
                             rcount += 1
 
+                    cursor.execute("""SELECT * FROM hau_values WHERE hau_v_id = ?""", (hau_values[0][0],))
+                    res = f'Last update: {cursor.fetchone()[-1]}'
+                    Label(card_fr, text=res, bg=white, fg='grey').grid(row=rcount, column=0, sticky=W, padx=(10, 0), pady=(15, 0))
+
                     def del_pr(pr_id):
                         am = messagebox.askquestion('Are you sure?', 'Are you sure for deleting?')
                         if am == 'yes':
@@ -210,6 +211,7 @@ def redact_pr(pr_id):
     red_pr.focus_force()
     red_pr.title(f'Updating values for {pr_info[1]}')
     red_pr.minsize(200, 200)
+    red_pr.configure(bg=white)
 
     rpr_width, rpr_height = 400, 400
     rpr_screen_width = red_pr.winfo_screenwidth()
@@ -237,7 +239,7 @@ def redact_pr(pr_id):
     name_frm.grid(row=1, column=0, sticky='w')
 
     rpr_name_label = ttk.Label(name_frm, text='Name', style='CustomHelvetica.TLabel')
-    rpr_name_label.grid(column=0, row=0, padx=10)
+    rpr_name_label.grid(column=0, row=0, padx=(10, 0))
     ttk.Label(name_frm, text='*', foreground='red', background='white', font=("Helvetica", 14)).grid(column=1, row=0)
 
     rpr_name_entry = ttk.Entry(red_property_frm, font=base14, foreground=black, background=white)
@@ -305,9 +307,23 @@ def redact_pr(pr_id):
             except ValueError:
                 return messagebox.showerror('Error', 'Enter the numerical values', parent=red_property_frm)
 
+        new_values = []
+        for v in w_list:
+            try:
+                new_values.append(int(v))
+            except ValueError:
+                new_values.append(0)
+
         # Updating Values
         update_conn = sqlite3.connect(DB_PATH)
         u_cursor = update_conn.cursor()
+        u_cursor.execute("""SELECT gas, water, electricity, heating, garbage FROM hau_values WHERE pr_id = ? ORDER BY hau_v_id DESC""", (pr_id,))
+        prev_values = u_cursor.fetchone()
+
+        for pv, nv in zip(prev_values, new_values):
+            if nv < pv:
+                return messagebox.showerror('Error', 'The new values must be greater than or equal to the previous ones', parent=red_property_frm)
+
         u_cursor.execute("""INSERT INTO hau_values (pr_id, gas, water, electricity, heating, garbage, date) VALUES (?, ?, ?, ?, ?, ?, ?)""",
                          (pr_id, rpr_gas_entry.get(), rpr_water_entry.get(), rpr_electricity_entry.get(), rpr_heating_entry.get(), rpr_garbage_entry.get(), str(date.today())))
         update_conn.commit()
