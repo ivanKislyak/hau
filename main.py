@@ -125,9 +125,9 @@ def refresh_cards():
         cursor.execute("""SELECT * FROM properties""")
 
         if not cursor.fetchall():
-            main_label = ttk.Label(canvas_fr, text="No properties found", font=base_bold18, foreground=dp_sea)
-            main_label.configure(background=white)
-            main_label.grid(column=0, row=0)
+            main_label = ttk.Label(canvas_fr, text="No properties found", font=base_bold18, foreground=dp_sea, justify='center')
+            main_label.configure(background=white, width=25)
+            main_label.grid(column=0, row=0, padx=(125, 0), pady=(75, 0))
 
             lets_add_btn = ttk.Button(canvas_fr, text="Let's add!", command=new_property, style='CustomHelvetica.TButton')
             lets_add_btn.grid(column=0, row=1)
@@ -171,7 +171,7 @@ def refresh_cards():
                             rcount += 1
 
                     def del_pr(pr_id):
-                        am = messagebox.askquestion('', 'Are you sure for deleting?')
+                        am = messagebox.askquestion('Are you sure?', 'Are you sure for deleting?')
                         if am == 'yes':
                             yes_del(pr_id)
 
