@@ -161,7 +161,7 @@ def refresh_cards():
                     type_lb.grid(row=1, column=0, sticky=W, padx=(10, 0))
 
                     pastes = ['Gas', 'Water', 'Electricity', 'Heating', 'Garbage']
-                    req_values = hau_values[0][1:]
+                    req_values = hau_values[0][2:]
                     rcount = 2
 
                     for name, value in zip(pastes, req_values):
@@ -252,6 +252,7 @@ def redact_pr(pr_id):
     rpr_gas_entry = ttk.Entry(red_property_frm, font=base14, foreground=black, background=white)
     rpr_gas_entry.grid(column=1, row=3, sticky="e")
     rpr_gas_entry.insert(0, pr_gas)
+    rpr_gas_entry.focus_force()
 
     rpr_water_label = ttk.Label(red_property_frm, text='Water', style='CustomHelvetica.TLabel')
     rpr_water_label.grid(column=0, row=4, sticky="w", padx=10)
