@@ -119,6 +119,9 @@ style.configure(
 def commas_to_dots(my_list):
     return [item.replace(',', '.', 1) for item in my_list]
 
+def close_window(_event, window):
+    window.destroy()
+
 # Loading real estate listings on the home screen
 def refresh_cards():
     for ch in canvas_fr.winfo_children():
@@ -259,7 +262,7 @@ def redact_pr(pr_id):
 
     rpr_gas_entry = ttk.Entry(red_property_frm, font=base14, foreground=black, background=white)
     rpr_gas_entry.grid(column=1, row=3, sticky="e")
-    rpr_gas_entry.insert(0, pr_gas)
+    rpr_gas_entry.insert(0, pr_gas if pr_gas else '')
     rpr_gas_entry.focus_force()
 
     rpr_water_label = ttk.Label(red_property_frm, text='Water', style='CustomHelvetica.TLabel')
@@ -267,21 +270,21 @@ def redact_pr(pr_id):
 
     rpr_water_entry = ttk.Entry(red_property_frm, font=base14, foreground=black, background=white)
     rpr_water_entry.grid(column=1, row=4, sticky="e")
-    rpr_water_entry.insert(0, pr_water)
+    rpr_water_entry.insert(0, pr_water if pr_water else '')
 
     rpr_electricity_label = ttk.Label(red_property_frm, text='Electricity', style='CustomHelvetica.TLabel')
     rpr_electricity_label.grid(column=0, row=5, sticky="w", padx=10)
 
     rpr_electricity_entry = ttk.Entry(red_property_frm, font=base14, foreground=black, background=white)
     rpr_electricity_entry.grid(column=1, row=5, sticky="e")
-    rpr_electricity_entry.insert(0, pr_electro)
+    rpr_electricity_entry.insert(0, pr_electro if pr_electro else '')
 
     rpr_heating_label = ttk.Label(red_property_frm, text='Heating', style='CustomHelvetica.TLabel')
     rpr_heating_label.grid(column=0, row=6, sticky="w", padx=10)
 
     rpr_heating_entry = ttk.Entry(red_property_frm, font=base14, foreground=black, background=white)
     rpr_heating_entry.grid(column=1, row=6, sticky="e")
-    rpr_heating_entry.insert(0, pr_heating)
+    rpr_heating_entry.insert(0, pr_heating if pr_heating else '')
 
     rpr_heating_btn = ttk.Button(red_property_frm, text='⚙️', width=3)
     rpr_heating_btn.grid(column=2, row=6, sticky="e", padx=10)
@@ -291,7 +294,7 @@ def redact_pr(pr_id):
 
     rpr_garbage_entry = ttk.Entry(red_property_frm, font=base14, foreground=black, background=white)
     rpr_garbage_entry.grid(column=1, row=7, sticky="e")
-    rpr_garbage_entry.insert(0, pr_garbage)
+    rpr_garbage_entry.insert(0, pr_garbage if pr_garbage else '')
 
     rpr_garbage_btn = ttk.Button(red_property_frm, text='⚙️', width=3)
     rpr_garbage_btn.grid(column=2, row=7, sticky="e", padx=10)
@@ -347,6 +350,10 @@ def redact_pr(pr_id):
 
     rpr_update_values_btn = ttk.Button(red_property_frm, text='Update values', command=update_values, style='CustomHelvetica.TButton')
     rpr_update_values_btn.grid(column=0, columnspan=2, row=8, sticky=N, pady=(40, 0))
+
+    red_pr.bind("<Control-Z>", lambda e, w=red_pr: close_window(e, w))
+    red_pr.bind("<Control-z>", lambda e, w=red_pr: close_window(e, w))
+    red_pr.bind("<Return>", lambda e: update_values())
 
 ############ ADDING PROPERTY ###############
 def new_property(_event=None):
@@ -467,11 +474,8 @@ def new_property(_event=None):
     add_pr_btn = ttk.Button(add_property_frm, width=10, text='+', style='CustomHelvetica.TButton', command=add_record)
     add_pr_btn.grid(column=0, row=8, columnspan=3, sticky='N', padx=5, pady=20)
 
-    def close_window(_event):
-        add_property.destroy()
-
-    add_property.bind("<Control-Z>", close_window)
-    add_property.bind("<Control-z>", close_window)
+    add_property.bind("<Control-Z>", lambda e, w=add_property: close_window(e, w))
+    add_property.bind("<Control-z>", lambda e, w=add_property: close_window(e, w))
 
 ############ END OF ADDING PROPERTY ###############
 
