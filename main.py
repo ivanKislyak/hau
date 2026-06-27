@@ -115,6 +115,10 @@ style.configure(
     background=white
 )
 
+
+def commas_to_dots(my_list):
+    return [item.replace(',', '.', 1) for item in my_list]
+
 # Loading real estate listings on the home screen
 def refresh_cards():
     for ch in canvas_fr.winfo_children():
@@ -301,16 +305,16 @@ def redact_pr(pr_id):
                   rpr_garbage_entry.get()]
         v_list = [v for v in w_list if v != '']
 
-        for v in v_list:
+        for v in commas_to_dots(v_list):
             try:
-                int(v)
+                float(v)
             except ValueError:
                 return messagebox.showerror('Error', 'Enter the numerical values', parent=red_property_frm)
 
         new_values = []
-        for v in w_list:
+        for v in commas_to_dots(w_list):
             try:
-                new_values.append(int(v))
+                new_values.append(float(v))
             except ValueError:
                 new_values.append(0)
 
@@ -318,14 +322,20 @@ def redact_pr(pr_id):
         update_conn = sqlite3.connect(DB_PATH)
         u_cursor = update_conn.cursor()
         u_cursor.execute("""SELECT gas, water, electricity, heating, garbage FROM hau_values WHERE pr_id = ? ORDER BY hau_v_id DESC""", (pr_id,))
-        prev_values = u_cursor.fetchone()
+
+        prev_values = []
+        for v in u_cursor.fetchone():
+            try:
+                prev_values.append(float(v))
+            except ValueError:
+                prev_values.append(0)
 
         for pv, nv in zip(prev_values, new_values):
             if nv < pv:
                 return messagebox.showerror('Error', 'The new values must be greater than or equal to the previous ones', parent=red_property_frm)
 
         u_cursor.execute("""INSERT INTO hau_values (pr_id, gas, water, electricity, heating, garbage, date) VALUES (?, ?, ?, ?, ?, ?, ?)""",
-                         (pr_id, rpr_gas_entry.get(), rpr_water_entry.get(), rpr_electricity_entry.get(), rpr_heating_entry.get(), rpr_garbage_entry.get(), str(date.today())))
+                         (pr_id, *new_values, str(date.today())))
         update_conn.commit()
 
         u_cursor.execute("""SELECT * FROM hau_values WHERE pr_id = ? ORDER BY hau_v_id DESC""", (pr_id,))
@@ -336,7 +346,7 @@ def redact_pr(pr_id):
         return refresh_cards()
 
     rpr_update_values_btn = ttk.Button(red_property_frm, text='Update values', command=update_values, style='CustomHelvetica.TButton')
-    rpr_update_values_btn.grid(column=0, columnspan=2, row=8, sticky=N, pady=10)
+    rpr_update_values_btn.grid(column=0, columnspan=2, row=8, sticky=N, pady=(40, 0))
 
 ############ ADDING PROPERTY ###############
 def new_property(_event=None):
@@ -421,9 +431,9 @@ def new_property(_event=None):
                   pr_garbage_entry.get()]
         v_list = [v for v in w_list if v != '']
 
-        for v in v_list:
+        for v in commas_to_dots(v_list):
             try:
-                int(v)
+                float(v)
             except ValueError:
                 return messagebox.showerror('Error', 'Enter the numerical values', parent=add_property_frm)
 
@@ -437,7 +447,7 @@ def new_property(_event=None):
         with sqlite3.connect(DB_PATH) as add_sql_conn:
             add_cursor = add_sql_conn.cursor()
             add_cursor.execute("""INSERT INTO hau_values (gas, water, electricity, heating, garbage, date, pr_id) VALUES (?, ?, ?, ?, ?, ?, ?)""",
-                               (pr_gas_entry.get(), pr_water_entry.get(), pr_electricity_entry.get(), pr_heating_entry.get(), pr_garbage_entry.get(), str(date.today()), next_pr_id))
+                               (*commas_to_dots(w_list), str(date.today()), next_pr_id))
 
         def lat_hau_id() -> int:
             with sqlite3.connect(DB_PATH) as whid_add_sql_conn:
