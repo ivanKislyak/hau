@@ -5,6 +5,8 @@ from tkinter import messagebox
 from pathlib import Path
 import sqlite3
 from datetime import date
+from tkinter.messagebox import showerror
+
 from PIL import Image, ImageTk
 
 # DB
@@ -289,6 +291,21 @@ def redact_pr(pr_id):
     rpr_garbage_btn.grid(column=2, row=7, sticky="e", padx=10)
 
     def update_values():
+        # Checking Values
+        if not rpr_name_entry.get():
+            return messagebox.showerror('Error', 'The “Name” field is required', parent=red_property_frm)
+
+        w_list = [rpr_gas_entry.get(), rpr_water_entry.get(), rpr_electricity_entry.get(), rpr_heating_entry.get(),
+                  rpr_garbage_entry.get()]
+        v_list = [v for v in w_list if v != '']
+
+        for v in v_list:
+            try:
+                int(v)
+            except ValueError:
+                return messagebox.showerror('Error', 'Enter the numerical values', parent=red_property_frm)
+
+        # Updating Values
         update_conn = sqlite3.connect(DB_PATH)
         u_cursor = update_conn.cursor()
         u_cursor.execute("""INSERT INTO hau_values (pr_id, gas, water, electricity, heating, garbage, date) VALUES (?, ?, ?, ?, ?, ?, ?)""",
@@ -300,7 +317,7 @@ def redact_pr(pr_id):
         update_conn.commit()
 
         red_pr.destroy()
-        refresh_cards()
+        return refresh_cards()
 
     rpr_update_values_btn = ttk.Button(red_property_frm, text='Update values', command=update_values, style='CustomHelvetica.TButton')
     rpr_update_values_btn.grid(column=0, columnspan=2, row=8, sticky=N, pady=10)
@@ -380,14 +397,26 @@ def new_property(_event=None):
     pr_garbage_btn.grid(column=2, row=7, sticky="e", padx=10)
 
     def add_record():
+        # Checking Values
+        if not pr_name_entry.get():
+            return messagebox.showerror('Error', 'The “Name” field is required', parent=add_property_frm)
+
+        w_list = [pr_gas_entry.get(), pr_water_entry.get(), pr_electricity_entry.get(), pr_heating_entry.get(),
+                  pr_garbage_entry.get()]
+        v_list = [v for v in w_list if v != '']
+
+        for v in v_list:
+            try:
+                int(v)
+            except ValueError:
+                return messagebox.showerror('Error', 'Enter the numerical values', parent=add_property_frm)
+
+        # Adding Values
         conn = sqlite3.connect(DB_PATH)
         cursor = conn.cursor()
         cursor.execute("SELECT seq FROM sqlite_sequence WHERE name='properties'")
         row = cursor.fetchone()
         next_pr_id = (row[0] + 1) if row else 1
-
-        if not pr_name_entry.get():
-            return messagebox.showerror('Error', 'The “Name” field is required', parent=add_property_frm)
 
         with sqlite3.connect(DB_PATH) as add_sql_conn:
             add_cursor = add_sql_conn.cursor()
@@ -405,8 +434,8 @@ def new_property(_event=None):
                 add_cursor.execute("""INSERT INTO properties (name, type_id, hau_v_id) VALUES (?, ?, ?)""",
                                    (pr_name_entry.get(), 1 if property_type.get() == 'Flat' else 2, lat_hau_id()))
 
-        add_property.destroy()
         conn.commit()
+        add_property.destroy()
         return refresh_cards()
 
     add_pr_btn = ttk.Button(add_property_frm, width=10, text='+', style='CustomHelvetica.TButton', command=add_record)
