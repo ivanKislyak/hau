@@ -5,6 +5,7 @@ from tkinter import messagebox
 from pathlib import Path
 import sqlite3
 from datetime import date
+from PIL import Image, ImageTk
 
 # DB
 BASE_DIR = Path(__file__).resolve().parent
@@ -12,6 +13,7 @@ DB_PATH = BASE_DIR / "data" / "hau.db"
 DB_PATH.parent.mkdir(exist_ok=True)
 DB_PATH = 'data/hau.db'
 SCHEMA_PATH = 'schema.sql'
+ICONS_PATH = 'assets/icons/'
 
 def db():
     with sqlite3.connect(DB_PATH) as sql_conn:
@@ -38,6 +40,12 @@ x = (screen_width - width) // 2
 y = (screen_height - height) // 2
 root.geometry(f"{width}x{height}+{x}+{y}")
 
+def resize_img(img):
+    return img.resize((20, 20))
+
+pencil_img = ImageTk.PhotoImage(resize_img(Image.open(ICONS_PATH+'pencil1.png')))
+trash_img = ImageTk.PhotoImage(resize_img(Image.open(ICONS_PATH+'trash.png')))
+
 # FGs
 dp_sea = '#11384D'
 white = '#FFFFFF'
@@ -55,6 +63,31 @@ mainframe = tk.Frame(root, bg='white')
 mainframe.grid(column=0, row=0, sticky='nsew')
 mainframe.grid_rowconfigure(0, weight=1)
 mainframe.grid_columnconfigure(0, weight=1)
+
+main_canvas = tk.Canvas(mainframe, bg='white', borderwidth=0, highlightthickness=0)
+main_canvas.grid(column=0, row=0, sticky='nsew')
+main_canvas.rowconfigure(0, weight=1)
+main_canvas.columnconfigure(0, weight=1)
+
+scrollbar = tk.Scrollbar(mainframe, orient="vertical", command=main_canvas.yview)
+scrollbar.grid(row=0, column=1, sticky="ns")
+
+main_canvas.configure(yscrollcommand=scrollbar.set)
+
+canvas_fr = tk.Frame(main_canvas, bg='white', borderwidth=0)
+
+canvas_fr.bind(
+    "<Configure>",
+    lambda e: main_canvas.configure(scrollregion=main_canvas.bbox("all"))
+)
+canvas_window = main_canvas.create_window((0, 0), window=canvas_fr, anchor="nw")
+
+def on_mouse_wheel(event):
+    main_canvas.yview_scroll(int(-1 * (event.delta / 120)), "units")
+
+root.bind("<MouseWheel>", on_mouse_wheel)
+root.bind('<Down>', on_mouse_wheel)
+canvas_fr.bind('<Down>', lambda e: print('was pressed down'))
 
 # Style
 style = ttk.Style()
@@ -92,7 +125,6 @@ def refresh_cards():
         cursor.execute("""SELECT * FROM properties""")
 
         if not cursor.fetchall():
-
             main_label = ttk.Label(canvas_fr, text="No properties found", font=base_bold18, foreground=dp_sea)
             main_label.configure(background=white)
             main_label.grid(column=0, row=0)
@@ -138,16 +170,16 @@ def refresh_cards():
                             ttk.Label(card_fr, text=txt, style='CustomHelvetica14.TLabel').grid(row=rcount, column=0, sticky=W, padx=(10, 0))
                             rcount += 1
 
-                    def del_pr():
+                    def del_pr(pr_id):
                         am = messagebox.askquestion('', 'Are you sure for deleting?')
                         if am == 'yes':
-                            yes_del(properties[0])
+                            yes_del(pr_id)
 
-                    new_hau_v = ttk.Button(card_fr, text='✏️',  style='CustomHelvetica.TButton', command=lambda v=properties[0]: redact_pr(v))
+                    new_hau_v = ttk.Button(card_fr, style='CustomHelvetica.TButton', command=lambda v=properties[0]: redact_pr(v), image=pencil_img, compound="center")
                     new_hau_v.grid(column=2, row=(rcount // 2)-1, sticky='e', padx=(0, 20))
                     new_hau_v.configure(width=2)
 
-                    del_pr_btn = ttk.Button(card_fr, text='🗑️', style='CustomHelvetica.TButton', command=del_pr)
+                    del_pr_btn = ttk.Button(card_fr, style='CustomHelvetica.TButton', command=lambda v=properties[0]: del_pr(v), image=trash_img)
                     del_pr_btn.grid(column=2, row=(rcount // 2)+1, sticky='e', padx=(0, 20))
                     del_pr_btn.configure(width=2)
 
@@ -269,7 +301,7 @@ def redact_pr(pr_id):
         red_pr.destroy()
         refresh_cards()
 
-    rpr_update_values_btn = ttk.Button(red_property_frm, text='Update values', command=update_values)
+    rpr_update_values_btn = ttk.Button(red_property_frm, text='Update values', command=update_values, style='CustomHelvetica.TButton')
     rpr_update_values_btn.grid(column=0, columnspan=2, row=8, sticky=N, pady=10)
 
 ############ ADDING PROPERTY ###############
@@ -305,6 +337,7 @@ def new_property(_event=None):
 
     pr_name_entry = ttk.Entry(add_property_frm, font=base14, foreground=black, background=white)
     pr_name_entry.grid(column=1, row=1, sticky="e")
+    pr_name_entry.focus_force()
 
     fill_info = ttk.Label(add_property_frm, text='Fill in the current values', font=("Helvetica", 14, 'bold'), foreground='darkgrey', background='white')
     fill_info.grid(column=0, row=2, columnspan=2, sticky="w", padx=10)
@@ -385,35 +418,6 @@ def new_property(_event=None):
     add_property.bind("<Control-z>", close_window)
 
 ############ END OF ADDING PROPERTY ###############
-main_canvas = tk.Canvas(mainframe, bg='white', borderwidth=0, highlightthickness=0)
-main_canvas.grid(column=0, row=0, sticky='nsew')
-main_canvas.rowconfigure(0, weight=1)
-main_canvas.columnconfigure(0, weight=1)
-
-canvas_fr = tk.Frame(main_canvas, bg='white', borderwidth=0)
-canvas_fr.columnconfigure(0, weight=1)
-canvas_fr.rowconfigure(0, weight=1)
-canvas_fr.rowconfigure(1, weight=1)
-
-canvas_window = main_canvas.create_window((0, 0), window=canvas_fr, anchor="n")
-
-scrollbar = tk.Scrollbar(mainframe, orient="vertical", command=main_canvas.yview)
-scrollbar.grid(row=0, column=1, sticky="ns")
-
-main_canvas.configure(yscrollcommand=scrollbar.set)
-
-canvas_fr.bind(
-    "<Configure>",
-    lambda e: main_canvas.configure(scrollregion=main_canvas.bbox("all"))
-)
-
-main_canvas.bind(
-    "<Configure>",
-    lambda e: main_canvas.itemconfigure(canvas_window, width=e.width)
-)
-
-canvas_fr.bind('<Down>', lambda e: main_canvas.configure(scrollregion=main_canvas.bbox("all")))
-canvas_fr.bind('<Down>', lambda e: print('was pressed down'))
 
 def yes_del(pr_id):
     with sqlite3.connect(DB_PATH) as sql_del_info:
