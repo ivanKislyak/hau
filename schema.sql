@@ -15,6 +15,17 @@ CREATE TABLE IF NOT EXISTS "type" (
 	"name"	TEXT NOT NULL UNIQUE
 );
 
+CREATE TABLE IF NOT EXISTS "tariffs" (
+    "tariff_id" INTEGER PRIMARY KEY AUTOINCREMENT,
+    "pr_id" INTEGER NOT NULL,
+    "gas_t" TEXT,
+    "water_t" TEXT,
+	"electricity_t" TEXT,
+	"heating_t" TEXT,
+	"garbage_t" TEXT,
+	FOREIGN KEY("pr_id") REFERENCES "properties"("id") DEFERRABLE INITIALLY DEFERRED
+);
+
 CREATE TABLE IF NOT EXISTS "properties" (
     "id" INTEGER PRIMARY KEY AUTOINCREMENT,
     "name" TEXT,

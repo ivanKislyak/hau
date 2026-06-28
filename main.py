@@ -5,15 +5,17 @@ from tkinter import messagebox
 from pathlib import Path
 import sqlite3
 from datetime import date
+
 from PIL import Image, ImageTk
 
 # DB
 BASE_DIR = Path(__file__).resolve().parent
+
 DB_PATH = BASE_DIR / "data" / "hau.db"
+SCHEMA_PATH = BASE_DIR / "schema.sql"
+ICONS_PATH = BASE_DIR / "assets" / "icons"
+
 DB_PATH.parent.mkdir(exist_ok=True)
-DB_PATH = 'data/hau.db'
-SCHEMA_PATH = 'schema.sql'
-ICONS_PATH = 'assets/icons/'
 
 def db():
     with sqlite3.connect(DB_PATH) as sql_conn:
@@ -22,12 +24,12 @@ def db():
             cursor.executescript(sql_script.read())
 
 # Current version
-c_version = '(0.1)'
+c_version = '(0.2)'
 
 # App
 root = tk.Tk()
 root.title("Hau " + c_version)
-root.iconbitmap(default="assets/icons/hau_logo.ico")
+root.iconbitmap(default=str(ICONS_PATH / "hau_logo.ico"))
 root.configure(bg="white")
 root.minsize(500, 300)
 root.columnconfigure(0, weight=1)
@@ -40,11 +42,14 @@ x = (screen_width - width) // 2
 y = (screen_height - height) // 2
 root.geometry(f"{width}x{height}+{x}+{y}")
 
-def resize_img(img):
-    return img.resize((20, 20))
+def resize_img(img, a, b):
+    return img.resize((a, b))
 
-pencil_img = ImageTk.PhotoImage(resize_img(Image.open(ICONS_PATH+'pencil1.png')))
-trash_img = ImageTk.PhotoImage(resize_img(Image.open(ICONS_PATH+'trash.png')))
+pencil_img = ImageTk.PhotoImage(resize_img(Image.open(ICONS_PATH / 'pencil1.png'), 20, 20))
+trash_img = ImageTk.PhotoImage(resize_img(Image.open(ICONS_PATH / 'trash.png'), 20, 20))
+house_img = ImageTk.PhotoImage(resize_img(Image.open(ICONS_PATH / 'house.png'), 20, 20))
+apartment_img = ImageTk.PhotoImage(resize_img(Image.open(ICONS_PATH / 'apartment.png'), 18, 22))
+settings_img = ImageTk.PhotoImage(resize_img(Image.open(ICONS_PATH / 'settings.png'), 20, 20))
 
 # FGs
 dp_sea = '#11384D'
@@ -58,6 +63,10 @@ base16 = ("Helvetica", 16)
 base_bold16 = ("Helvetica", 16, 'bold')
 base14 = ("Helvetica", 14)
 base_bold14 = ("Helvetica", 14, 'bold')
+base12 = ("Helvetica", 12)
+base_bold12 = ("Helvetica", 12, 'bold')
+base10 = ("Helvetica", 10)
+base_bold10 = ("Helvetica", 10, 'bold')
 
 mainframe = tk.Frame(root, bg='white')
 mainframe.grid(column=0, row=0, sticky='nsew')
@@ -114,7 +123,20 @@ style.configure(
     foreground=black,
     background=white
 )
-
+style.configure(
+    "CustomHelvetica.TRadiobutton",
+    fieldbackground=white,
+    foreground=black,
+    background=white,
+    font=base14
+)
+style.configure(
+    "CustomDHelvetica.TRadiobutton",
+    fieldbackground=white,
+    foreground='gray67',
+    background=white,
+    font=base14
+)
 
 def commas_to_dots(my_list):
     return [item.replace(',', '.', 1) for item in my_list]
@@ -158,7 +180,7 @@ def refresh_cards():
                     card_fr.grid_columnconfigure(0, minsize=400)
                     card_fr.configure(width=400)
 
-                    name_lb = ttk.Label(card_fr, text=properties[1], style='CustomHelvetica14.TLabel', justify='center')
+                    name_lb = ttk.Label(card_fr, text=properties[1], style='CustomHelvetica14.TLabel', justify='center', image=house_img if properties[2] == 2 else apartment_img, compound="left")
                     name_lb.grid(row=0, column=0, columnspan=3, pady=3)
 
                     type_text = 'Category: Flat' if properties[2] == 1 else 'Category: House'
@@ -265,12 +287,18 @@ def redact_pr(pr_id):
     rpr_gas_entry.insert(0, pr_gas if pr_gas else '')
     rpr_gas_entry.focus_force()
 
+    pr_gas_btn = ttk.Button(red_property_frm, width=3, image=settings_img)
+    pr_gas_btn.grid(column=2, row=3, sticky="e", padx=10)
+
     rpr_water_label = ttk.Label(red_property_frm, text='Water', style='CustomHelvetica.TLabel')
     rpr_water_label.grid(column=0, row=4, sticky="w", padx=10)
 
     rpr_water_entry = ttk.Entry(red_property_frm, font=base14, foreground=black, background=white)
     rpr_water_entry.grid(column=1, row=4, sticky="e")
     rpr_water_entry.insert(0, pr_water if pr_water else '')
+
+    pr_water_btn = ttk.Button(red_property_frm, width=3, image=settings_img)
+    pr_water_btn.grid(column=2, row=4, sticky="e", padx=10)
 
     rpr_electricity_label = ttk.Label(red_property_frm, text='Electricity', style='CustomHelvetica.TLabel')
     rpr_electricity_label.grid(column=0, row=5, sticky="w", padx=10)
@@ -279,6 +307,9 @@ def redact_pr(pr_id):
     rpr_electricity_entry.grid(column=1, row=5, sticky="e")
     rpr_electricity_entry.insert(0, pr_electro if pr_electro else '')
 
+    pr_electricity_btn = ttk.Button(red_property_frm, width=3, image=settings_img)
+    pr_electricity_btn.grid(column=2, row=5, sticky="e", padx=10)
+
     rpr_heating_label = ttk.Label(red_property_frm, text='Heating', style='CustomHelvetica.TLabel')
     rpr_heating_label.grid(column=0, row=6, sticky="w", padx=10)
 
@@ -286,7 +317,7 @@ def redact_pr(pr_id):
     rpr_heating_entry.grid(column=1, row=6, sticky="e")
     rpr_heating_entry.insert(0, pr_heating if pr_heating else '')
 
-    rpr_heating_btn = ttk.Button(red_property_frm, text='⚙️', width=3)
+    rpr_heating_btn = ttk.Button(red_property_frm, width=3, image=settings_img)
     rpr_heating_btn.grid(column=2, row=6, sticky="e", padx=10)
 
     rpr_garbage_label = ttk.Label(red_property_frm, text='Garbage', style='CustomHelvetica.TLabel')
@@ -296,7 +327,7 @@ def redact_pr(pr_id):
     rpr_garbage_entry.grid(column=1, row=7, sticky="e")
     rpr_garbage_entry.insert(0, pr_garbage if pr_garbage else '')
 
-    rpr_garbage_btn = ttk.Button(red_property_frm, text='⚙️', width=3)
+    rpr_garbage_btn = ttk.Button(red_property_frm, width=3, image=settings_img)
     rpr_garbage_btn.grid(column=2, row=7, sticky="e", padx=10)
 
     def update_values():
@@ -344,6 +375,10 @@ def redact_pr(pr_id):
         u_cursor.execute("""SELECT * FROM hau_values WHERE pr_id = ? ORDER BY hau_v_id DESC""", (pr_id,))
         u_cursor.execute("""UPDATE properties set hau_v_id = ? WHERE id = ?""", (u_cursor.fetchone()[0], pr_id))
         update_conn.commit()
+        u_cursor.execute("""UPDATE properties set type_id = ? WHERE id = ?""", (1 if property_type.get() == 'Flat' else 2, pr_id))
+        update_conn.commit()
+        u_cursor.execute("""INSERT INTO tariffs (pr_id, gas_t, water_t, electricity_t, heating_t, garbage_t) VALUES (?, ?, ?, ?, ?, ?)""", (pr_id, 0, 0, 0, 0, 0))
+        update_conn.commit()
 
         red_pr.destroy()
         return refresh_cards()
@@ -374,6 +409,185 @@ def new_property(_event=None):
     add_property_frm = tk.Frame(add_property, bg=white)
     add_property_frm.grid(row=0, column=0)
 
+    def tariff_for(value_h):
+        tariff_top = tk.Toplevel(root)
+        tariff_top.focus_force()
+        tariff_top.title("Hau " + c_version + ' - tariff for ' + value_h)
+        tariff_top.configure(bg="white")
+        tariff_top.minsize(250, 200)
+        tariff_top.columnconfigure(0, weight=1)
+        tariff_top.columnconfigure(1, weight=1)
+        tariff_top.rowconfigure(0, weight=1)
+        tariff_top.rowconfigure(1, weight=1)
+        tariff_top.rowconfigure(3, weight=1)
+
+        tariff_top.geometry(f"{pr_width}x{pr_height}+{pr_x}+{pr_y}")
+
+        tariff_frm = tk.Frame(tariff_top, bg=white)
+        tariff_frm.grid(row=0, column=0)
+
+        s_lbl = tk.Label(tariff_frm, text='Rate per unit:', bg=white, fg=black, font=base14)
+        s_lbl.grid(row=1, column=0, padx=5, pady=5, sticky='nw')
+
+        s_entry = ttk.Entry(tariff_frm, font=base14, foreground=black, background=white, width=5)
+        s_entry.grid(row=1, column=1, padx=5, pady=5)
+
+        c_frame = Frame(tariff_frm, bg='white')
+        c_frame.grid(row=3, columnspan=5)
+
+        c_lbl = tk.Label(c_frame, text='First', bg=white, fg=black, font=base14)
+        c_lbl.grid(row=0, column=0, padx=5, pady=5)
+
+        c_entry = ttk.Entry(c_frame, font=base14, foreground=black, background=white, width=3)
+        c_entry.grid(row=0, column=1)
+
+        c2_lbl = tk.Label(c_frame, text='units cost: ', bg=white, fg=black, font=base14)
+        c2_lbl.grid(row=0, column=2, padx=5, pady=5)
+
+        c2_entry = ttk.Entry(c_frame, font=base14, foreground=black, background=white, width=3)
+        c2_entry.grid(row=0, column=3)
+
+        c3_lbl = tk.Label(c_frame, text='Next', bg=white, fg=black, font=base14)
+        c3_lbl.grid(row=1, column=0, padx=5, pady=5)
+
+        c3_entry = ttk.Entry(c_frame, font=base14, foreground=black, background=white, width=3)
+        c3_entry.grid(row=1, column=1)
+
+        c4_lbl = tk.Label(c_frame, text='units cost: ', bg=white, fg=black, font=base14)
+        c4_lbl.grid(row=1, column=2, padx=5, pady=5)
+
+        c4_entry = ttk.Entry(c_frame, font=base14, foreground=black, background=white, width=3)
+        c4_entry.grid(row=1, column=3)
+
+        row_t = 2
+
+        def add_more(btn, confirm_rb):
+            nonlocal row_t
+            tk.Label(c_frame, text='Next', bg=white, fg=black, font=base14).grid(row=row_t, column=0, padx=5, pady=5)
+            ttk.Entry(c_frame, font=base14, foreground=black, background=white, width=3).grid(row=row_t, column=1)
+            tk.Label(c_frame, text='units cost: ', bg=white, fg=black, font=base14).grid(row=row_t, column=2, padx=5, pady=5)
+            ttk.Entry(c_frame, font=base14, foreground=black, background=white, width=3).grid(row=row_t, column=3)
+
+            def del_cur(r):
+                for ch in c_frame.winfo_children():
+                    if ch.grid_info()['row'] == r:
+                        ch.destroy()
+
+            ttk.Button(c_frame, text='X', style='CustomHelvetica.TButton', width=2, command=lambda r=row_t: del_cur(r)).grid(row=row_t, column=4, padx=5, pady=5)
+
+            btn.grid(row=row_t+2)
+            confirm_rb.grid(row=row_t+3)
+
+            row_t += 1
+
+
+        vs = StringVar()
+        vs.set('Flat')
+
+        def confirm_rate_info(v):
+            conn = sqlite3.connect(DB_PATH)
+            cursor = conn.cursor()
+            cursor.execute("SELECT seq FROM sqlite_sequence WHERE name='properties'")
+            row = cursor.fetchone()
+            next_pr_id = (row[0] + 1) if row else 1
+
+            insert_value = ''
+
+            if v.get() == 'Flat':
+                insert_value = s_entry.get()
+                if not insert_value:
+                    return messagebox.showerror('Error', 'All fields must be filled in', parent=tariff_frm)
+
+            elif v.get() == 'Tiered':
+                sep = ','
+                insert_value = [er_ch.get() for er_ch in c_frame.winfo_children() if isinstance(er_ch, ttk.Entry)]
+
+                for val in insert_value:
+                    if not val:
+                        return messagebox.showerror('Error', 'All fields must be filled in', parent=tariff_frm)
+
+                insert_value = sep.join(insert_value) if len(insert_value) / 2 else sep.join(insert_value[:-2])
+
+                print(insert_value)
+
+            if value_h == 'gas':
+                dbsql = sqlite3.connect(DB_PATH)
+                dbcursor = dbsql.cursor()
+                dbcursor.execute("""INSERT INTO tariffs (pr_id, gas_t) VALUES (?, ?)""", (next_pr_id, insert_value))
+                dbsql.commit()
+
+            elif value_h == 'water':
+                pass
+            elif value_h == 'electricity':
+                pass
+            elif value_h == 'heating':
+                pass
+            elif value_h == 'garbage':
+                pass
+
+            return None
+        confirm_rate_btn = ttk.Button(tariff_frm, style='CustomHelvetica.TButton', text='Confirm rate info', command=lambda v=vs: confirm_rate_info(v))
+        confirm_rate_btn.grid(row=5, column=0, columnspan=3, sticky='ew', pady=(10, 5))
+
+        c_btn = ttk.Button(c_frame, style='CustomHelvetica.TButton', text='Add more')
+        c_btn.grid(row=row_t, column=0, columnspan=4, sticky='ew', pady=(10, 5))
+        c_btn.configure(command=lambda b=c_btn, c=confirm_rate_btn: add_more(b, c))
+
+        # note_for_tiered = (f"Note: Some tariff plans use tiered pricing, meaning the unit rate is not fixed. \n"
+        #                    f"For example, if monthly electricity consumption is 457 units, the first 150 units \n"
+        #                    f"may cost $0.15 per unit. After subtracting 150 from 457, 307 units remain. \n"
+        #                    f"These remaining units may be charged at a higher rate, for example $0.18 per unit. \n"
+        #                    f"In this case, the first 150 units cost $22.50, and the remaining 307 units cost $55.26. \n"
+        #                    f"The total amount to pay is $77.76.")
+
+        frm_for_note = tk.Frame(tariff_frm)
+        frm_for_note.grid(row=4)
+        # tk.Label(frm_for_note, text=note_for_tiered, fg='gray67', bg=white, font=base10).grid(row=0)
+
+        def flat_or_tiered(v):
+            value = v.get()
+
+            if value == 'Flat':
+                s_entry.configure(state='enabled')
+                s_lbl.configure(fg=black)
+                tiered_rate.configure(style='CustomDHelvetica.TRadiobutton')
+                flat_rate.configure(style='CustomHelvetica.TRadiobutton')
+
+                for d_child in c_frame.winfo_children():
+                    try:
+                        d_child['state'] = 'disabled'
+                    except KeyError:
+                        pass
+
+            elif value == 'Tiered':
+                s_entry.config(state="disabled")
+                s_lbl.configure(fg='gray67')
+                flat_rate.configure(style='CustomDHelvetica.TRadiobutton')
+                tiered_rate.configure(style='CustomHelvetica.TRadiobutton')
+
+                for n_child in c_frame.winfo_children():
+                    try:
+                        n_child['state'] = 'normal'
+                    except KeyError:
+                        pass
+
+        flat_rate = ttk.Radiobutton(tariff_frm, text='Flat rate', style='CustomHelvetica.TRadiobutton', variable=vs, value='Flat', command=lambda v=vs: flat_or_tiered(v))
+        flat_rate.grid(column=0, row=0, padx=5, pady=5, sticky='w')
+
+        tiered_rate = ttk.Radiobutton(tariff_frm, text='Tiered rate', style='CustomHelvetica.TRadiobutton', variable=vs, value='Tiered', command=lambda v=vs: flat_or_tiered(v))
+        tiered_rate.grid(column=0, row=2, padx=5, pady=5, sticky='w')
+
+        s_entry.configure(state='enabled')
+        s_lbl.configure(fg=black)
+        tiered_rate.configure(style='CustomDHelvetica.TRadiobutton')
+        flat_rate.configure(style='CustomHelvetica.TRadiobutton')
+
+        for c_child in c_frame.winfo_children():
+            try:
+                c_child['state'] = 'disabled'
+            except KeyError:
+                pass
+
     property_types = ['Flat', 'House']
     property_type = ttk.Combobox(add_property_frm, values=property_types, style='CustomHelvetica.TCombobox', font=base18, state='readonly', justify='center')
     property_type.grid(column=0, row=0, pady=10, columnspan=3)
@@ -399,11 +613,17 @@ def new_property(_event=None):
     pr_gas_entry = ttk.Entry(add_property_frm, font=base14, foreground=black, background=white)
     pr_gas_entry.grid(column=1, row=3, sticky="e")
 
+    pr_gas_btn = ttk.Button(add_property_frm, width=3, image=settings_img, command=lambda: tariff_for('gas'))
+    pr_gas_btn.grid(column=2, row=3, sticky="e", padx=10)
+
     pr_water = ttk.Label(add_property_frm, text='Water', style='CustomHelvetica.TLabel')
     pr_water.grid(column=0, row=4, sticky="w", padx=10)
 
     pr_water_entry = ttk.Entry(add_property_frm, font=base14, foreground=black, background=white)
     pr_water_entry.grid(column=1, row=4, sticky="e")
+
+    pr_water_btn = ttk.Button(add_property_frm, width=3, image=settings_img, command=lambda: tariff_for('water'))
+    pr_water_btn.grid(column=2, row=4, sticky="e", padx=10)
 
     pr_electricity = ttk.Label(add_property_frm, text='Electricity', style='CustomHelvetica.TLabel')
     pr_electricity.grid(column=0, row=5, sticky="w", padx=10)
@@ -411,13 +631,16 @@ def new_property(_event=None):
     pr_electricity_entry = ttk.Entry(add_property_frm, font=base14, foreground=black, background=white)
     pr_electricity_entry.grid(column=1, row=5, sticky="e")
 
+    pr_electricity_btn = ttk.Button(add_property_frm, width=3, image=settings_img, command=lambda: tariff_for('electricity'))
+    pr_electricity_btn.grid(column=2, row=5, sticky="e", padx=10)
+
     pr_heating = ttk.Label(add_property_frm, text='Heating', style='CustomHelvetica.TLabel')
     pr_heating.grid(column=0, row=6, sticky="w", padx=10)
 
     pr_heating_entry = ttk.Entry(add_property_frm, font=base14, foreground=black, background=white)
     pr_heating_entry.grid(column=1, row=6, sticky="e")
 
-    pr_heating_btn = ttk.Button(add_property_frm, text='⚙️', width=3)
+    pr_heating_btn = ttk.Button(add_property_frm, width=3, image=settings_img, command=lambda: tariff_for('heating'))
     pr_heating_btn.grid(column=2, row=6, sticky="e", padx=10)
 
     pr_garbage = ttk.Label(add_property_frm, text='Garbage', style='CustomHelvetica.TLabel')
@@ -426,7 +649,7 @@ def new_property(_event=None):
     pr_garbage_entry = ttk.Entry(add_property_frm, font=base14, foreground=black, background=white)
     pr_garbage_entry.grid(column=1, row=7, sticky="e")
 
-    pr_garbage_btn = ttk.Button(add_property_frm, text='⚙️', width=3)
+    pr_garbage_btn = ttk.Button(add_property_frm, width=3, image=settings_img, command=lambda: tariff_for('garbage'))
     pr_garbage_btn.grid(column=2, row=7, sticky="e", padx=10)
 
     def add_record():
@@ -467,6 +690,9 @@ def new_property(_event=None):
                 add_cursor.execute("""INSERT INTO properties (name, type_id, hau_v_id) VALUES (?, ?, ?)""",
                                    (pr_name_entry.get(), 1 if property_type.get() == 'Flat' else 2, lat_hau_id()))
 
+        cursor.execute("""INSERT INTO tariffs (pr_id, gas_t, water_t, electricity_t, heating_t, garbage_t) VALUES (?, ?, ?, ?, ?, ?)""", (next_pr_id, 0, 0, 0, 0, 0))
+        conn.commit()
+
         conn.commit()
         add_property.destroy()
         return refresh_cards()
@@ -489,4 +715,3 @@ if __name__ == '__main__':
     db()
     refresh_cards()
     root.mainloop()
-
