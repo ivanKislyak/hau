@@ -572,7 +572,7 @@ def new_property(_event=None):
                            f"In this case, the first 150 units cost $22.50, and the remaining 307 units cost $55.26. \n"
                            f"The total amount to pay is $77.76.")
 
-        ToolTip(tiered_rate, msg=note_for_tiered)
+        ToolTip(tiered_rate, msg=note_for_tiered, delay=1.0)
 
         s_entry.configure(state='enabled')
         s_lbl.configure(fg=black)
