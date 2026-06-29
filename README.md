@@ -10,7 +10,7 @@ A simple desktop app for tracking utility meter values and tariffs.
 ## Installation
 
 ```bash
-git clone https://github.com/your-name/hau.git
+git clone https://github.com/ivanKislyak/hau.git
 cd hau
 python -m venv .venv
 .venv\Scripts\activate
