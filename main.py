@@ -5,7 +5,7 @@ from tkinter import messagebox
 from pathlib import Path
 import sqlite3
 from datetime import date
-
+from TkToolTip import ToolTip
 from PIL import Image, ImageTk
 
 # DB
@@ -430,7 +430,7 @@ def new_property(_event=None):
         s_lbl.grid(row=1, column=0, padx=5, pady=5, sticky='nw')
 
         s_entry = ttk.Entry(tariff_frm, font=base14, foreground=black, background=white, width=5)
-        s_entry.grid(row=1, column=1, padx=5, pady=5)
+        s_entry.grid(row=1, column=1, padx=(5, 50), pady=5)
 
         c_frame = Frame(tariff_frm, bg='white')
         c_frame.grid(row=3, columnspan=5)
@@ -508,41 +508,29 @@ def new_property(_event=None):
 
                 insert_value = sep.join(insert_value) if len(insert_value) / 2 else sep.join(insert_value[:-2])
 
-                print(insert_value)
+            cursor.execute("""SELECT * FROM tariffs WHERE pr_id = ?""", (next_pr_id,))
+            info_ab_t = cursor.fetchall()
 
-            if value_h == 'gas':
+            change_v = f'{value_h}_t'
+
+            if not info_ab_t:
                 dbsql = sqlite3.connect(DB_PATH)
                 dbcursor = dbsql.cursor()
-                dbcursor.execute("""INSERT INTO tariffs (pr_id, gas_t) VALUES (?, ?)""", (next_pr_id, insert_value))
+                dbcursor.execute(f"""INSERT INTO tariffs (pr_id, {change_v}) VALUES (?, ?)""", (next_pr_id, insert_value))
                 dbsql.commit()
+            else:
+                dbsql = sqlite3.connect(DB_PATH)
+                dbcursor = dbsql.cursor()
+                dbcursor.execute(f"""UPDATE tariffs set {change_v} = ? WHERE pr_id = ?""", (insert_value, next_pr_id))
+                dbsql.commit()
+            return tariff_top.destroy()
 
-            elif value_h == 'water':
-                pass
-            elif value_h == 'electricity':
-                pass
-            elif value_h == 'heating':
-                pass
-            elif value_h == 'garbage':
-                pass
-
-            return None
         confirm_rate_btn = ttk.Button(tariff_frm, style='CustomHelvetica.TButton', text='Confirm rate info', command=lambda v=vs: confirm_rate_info(v))
-        confirm_rate_btn.grid(row=5, column=0, columnspan=3, sticky='ew', pady=(10, 5))
+        confirm_rate_btn.grid(row=5, column=0, columnspan=3, sticky='ew', pady=(10, 5), padx=5)
 
         c_btn = ttk.Button(c_frame, style='CustomHelvetica.TButton', text='Add more')
         c_btn.grid(row=row_t, column=0, columnspan=4, sticky='ew', pady=(10, 5))
         c_btn.configure(command=lambda b=c_btn, c=confirm_rate_btn: add_more(b, c))
-
-        # note_for_tiered = (f"Note: Some tariff plans use tiered pricing, meaning the unit rate is not fixed. \n"
-        #                    f"For example, if monthly electricity consumption is 457 units, the first 150 units \n"
-        #                    f"may cost $0.15 per unit. After subtracting 150 from 457, 307 units remain. \n"
-        #                    f"These remaining units may be charged at a higher rate, for example $0.18 per unit. \n"
-        #                    f"In this case, the first 150 units cost $22.50, and the remaining 307 units cost $55.26. \n"
-        #                    f"The total amount to pay is $77.76.")
-
-        frm_for_note = tk.Frame(tariff_frm)
-        frm_for_note.grid(row=4)
-        # tk.Label(frm_for_note, text=note_for_tiered, fg='gray67', bg=white, font=base10).grid(row=0)
 
         def flat_or_tiered(v):
             value = v.get()
@@ -576,6 +564,15 @@ def new_property(_event=None):
 
         tiered_rate = ttk.Radiobutton(tariff_frm, text='Tiered rate', style='CustomHelvetica.TRadiobutton', variable=vs, value='Tiered', command=lambda v=vs: flat_or_tiered(v))
         tiered_rate.grid(column=0, row=2, padx=5, pady=5, sticky='w')
+
+        note_for_tiered = (f"Note: Some tariff plans use tiered pricing, meaning the unit rate is not fixed. \n"
+                           f"For example, if monthly electricity consumption is 457 units, the first 150 units \n"
+                           f"may cost $0.15 per unit. After subtracting 150 from 457, 307 units remain. \n"
+                           f"These remaining units may be charged at a higher rate, for example $0.18 per unit. \n"
+                           f"In this case, the first 150 units cost $22.50, and the remaining 307 units cost $55.26. \n"
+                           f"The total amount to pay is $77.76.")
+
+        ToolTip(tiered_rate, msg=note_for_tiered)
 
         s_entry.configure(state='enabled')
         s_lbl.configure(fg=black)
