@@ -416,24 +416,22 @@ def redact_pr(pr_id):
         tiered_rate.configure(style='CustomDHelvetica.TRadiobutton')
         flat_rate.configure(style='CustomHelvetica.TRadiobutton')
 
-        def give_me_correct_num(one_from_dict):
-            a = {
-                'gas': 2,
-                'water': 3,
-                'electricity': 4,
-                'heating': 5,
-                'garbage': 6
-            }
-            return a[one_from_dict]
+        needed_columns = {
+            'gas': 2,
+            'water': 3,
+            'electricity': 4,
+            'heating': 5,
+            'garbage': 6
+        }
 
-        if isinstance(result_get_v[give_me_correct_num(value_h)], int):
+        if isinstance(result_get_v[needed_columns[value_h]], int):
             vs.set('Flat')
-            s_entry.insert(0, result_get_v[give_me_correct_num(value_h)])
+            s_entry.insert(0, result_get_v[needed_columns[value_h]])
 
-        elif isinstance(result_get_v[give_me_correct_num(value_h)], str):
+        elif isinstance(result_get_v[needed_columns[value_h]], str):
             vs.set('Tiered')
 
-            separated_values = result_get_v[give_me_correct_num(value_h)].split(',')
+            separated_values = result_get_v[needed_columns[value_h]].split(',')
             entries = [w for w in c_frame.winfo_children() if isinstance(w, ttk.Entry)]
 
             for widget, separated_value in zip(entries, separated_values):
