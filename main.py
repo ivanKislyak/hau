@@ -5,6 +5,7 @@ from tkinter import messagebox
 from pathlib import Path
 import sqlite3
 from datetime import date
+# noinspection PyPackageRequirements
 from TkToolTip import ToolTip
 from PIL import Image, ImageTk
 
@@ -258,6 +259,188 @@ def redact_pr(pr_id):
     red_property_frm = tk.Frame(red_pr, bg=white)
     red_property_frm.grid(row=0, column=0)
 
+    def tariff_for(value_h):
+        r_tariff_top = tk.Toplevel(root)
+        r_tariff_top.focus_force()
+        r_tariff_top.title("Hau " + c_version + ' - changing tariff for ' + value_h)
+        r_tariff_top.configure(bg="white")
+        r_tariff_top.minsize(250, 200)
+        r_tariff_top.columnconfigure(0, weight=1)
+        r_tariff_top.columnconfigure(1, weight=1)
+        r_tariff_top.rowconfigure(0, weight=1)
+        r_tariff_top.rowconfigure(1, weight=1)
+        r_tariff_top.rowconfigure(3, weight=1)
+
+        r_tariff_top.geometry(f"{rpr_width}x{rpr_height}+{rpr_x}+{rpr_y}")
+
+        tariff_frm = tk.Frame(r_tariff_top, bg=white)
+        tariff_frm.grid(row=0, column=0)
+
+        s_lbl = tk.Label(tariff_frm, text='Rate per unit:', bg=white, fg=black, font=base14)
+        s_lbl.grid(row=1, column=0, padx=5, pady=5, sticky='nw')
+
+        s_entry = ttk.Entry(tariff_frm, font=base14, foreground=black, background=white, width=5)
+        s_entry.grid(row=1, column=1, padx=(5, 50), pady=5)
+
+        c_frame = Frame(tariff_frm, bg='white')
+        c_frame.grid(row=3, columnspan=5)
+
+        c_lbl = tk.Label(c_frame, text='First', bg=white, fg=black, font=base14)
+        c_lbl.grid(row=0, column=0, padx=5, pady=5)
+
+        c_entry = ttk.Entry(c_frame, font=base14, foreground=black, background=white, width=3)
+        c_entry.grid(row=0, column=1)
+
+        c2_lbl = tk.Label(c_frame, text='units cost: ', bg=white, fg=black, font=base14)
+        c2_lbl.grid(row=0, column=2, padx=5, pady=5)
+
+        c2_entry = ttk.Entry(c_frame, font=base14, foreground=black, background=white, width=3)
+        c2_entry.grid(row=0, column=3)
+
+        c3_lbl = tk.Label(c_frame, text='Next', bg=white, fg=black, font=base14)
+        c3_lbl.grid(row=1, column=0, padx=5, pady=5)
+
+        c3_entry = ttk.Entry(c_frame, font=base14, foreground=black, background=white, width=3)
+        c3_entry.grid(row=1, column=1)
+
+        c4_lbl = tk.Label(c_frame, text='units cost: ', bg=white, fg=black, font=base14)
+        c4_lbl.grid(row=1, column=2, padx=5, pady=5)
+
+        c4_entry = ttk.Entry(c_frame, font=base14, foreground=black, background=white, width=3)
+        c4_entry.grid(row=1, column=3)
+
+        conn_get_v = sqlite3.connect(DB_PATH)
+        cursor_get_v = conn_get_v.cursor()
+        cursor_get_v.execute("""SELECT * FROM tariffs WHERE pr_id = ?""", (pr_id,))
+        result_get_v = cursor_get_v.fetchone()
+        conn_get_v.commit()
+
+        vs = StringVar()
+        vs.set('Flat')
+
+        row_t = 2
+
+        def add_more(btn, confirm_rb):
+            nonlocal row_t
+            tk.Label(c_frame, text='Next', bg=white, fg=black, font=base14).grid(row=row_t, column=0, padx=5, pady=5)
+            ttk.Entry(c_frame, font=base14, foreground=black, background=white, width=3).grid(row=row_t, column=1)
+            tk.Label(c_frame, text='units cost: ', bg=white, fg=black, font=base14).grid(row=row_t, column=2, padx=5, pady=5)
+            ttk.Entry(c_frame, font=base14, foreground=black, background=white, width=3).grid(row=row_t, column=3)
+
+            def del_cur(r):
+                for ch in c_frame.winfo_children():
+                    if ch.grid_info()['row'] == r:
+                        ch.destroy()
+
+            ttk.Button(c_frame, text='X', style='CustomHelvetica.TButton', width=2, command=lambda r=row_t: del_cur(r)).grid(row=row_t, column=4, padx=5, pady=5)
+
+            btn.grid(row=row_t+2)
+            confirm_rb.grid(row=row_t+3)
+
+            row_t += 1
+
+        def confirm_rate_info(v):
+            change_v = f'{value_h}_t'
+            insert_value = ''
+
+            if v.get() == 'Flat':
+                insert_value = s_entry.get()
+                if not insert_value:
+                    return messagebox.showerror('Error', 'All fields must be filled in', parent=tariff_frm)
+
+            elif v.get() == 'Tiered':
+                sep = ','
+                insert_value = [er_ch.get() for er_ch in c_frame.winfo_children() if isinstance(er_ch, ttk.Entry)]
+
+                for val in insert_value:
+                    if not val:
+                        return messagebox.showerror('Error', 'All fields must be filled in', parent=tariff_frm)
+
+                insert_value = sep.join(insert_value) if len(insert_value) / 2 else sep.join(insert_value[:-2])
+                print(insert_value)
+
+
+            conn = sqlite3.connect(DB_PATH)
+            cursor = conn.cursor()
+            cursor.execute(f"""UPDATE tariffs set {change_v} = ? WHERE pr_id = ?""", (insert_value, pr_id))
+            conn.commit()
+
+            return r_tariff_top.destroy()
+
+        def flat_or_tiered(v):
+            value = v.get()
+
+            if value == 'Flat':
+                s_entry.configure(state='enabled')
+                s_lbl.configure(fg=black)
+                tiered_rate.configure(style='CustomDHelvetica.TRadiobutton')
+                flat_rate.configure(style='CustomHelvetica.TRadiobutton')
+                flat_or_tiered(vs)
+
+            elif value == 'Tiered':
+                s_entry.config(state="disabled")
+                s_lbl.configure(fg='gray67')
+                flat_rate.configure(style='CustomDHelvetica.TRadiobutton')
+                tiered_rate.configure(style='CustomHelvetica.TRadiobutton')
+
+                for n_child in c_frame.winfo_children():
+                    try:
+                        n_child['state'] = 'normal'
+                    except KeyError:
+                        pass
+
+        confirm_rate_btn = ttk.Button(tariff_frm, style='CustomHelvetica.TButton', text='Confirm rate info', command=lambda v=vs: confirm_rate_info(v))
+        confirm_rate_btn.grid(row=5, column=0, columnspan=3, sticky='ew', pady=(10, 5), padx=5)
+
+        c_btn = ttk.Button(c_frame, style='CustomHelvetica.TButton', text='Add more')
+        c_btn.grid(row=row_t, column=0, columnspan=4, sticky='ew', pady=(10, 5))
+        c_btn.configure(command=lambda b=c_btn, c=confirm_rate_btn: add_more(b, c))
+
+        flat_rate = ttk.Radiobutton(tariff_frm, text='Flat rate', style='CustomHelvetica.TRadiobutton', variable=vs, value='Flat', command=lambda v=vs: flat_or_tiered(v))
+        flat_rate.grid(column=0, row=0, padx=5, pady=5, sticky='w')
+
+        tiered_rate = ttk.Radiobutton(tariff_frm, text='Tiered rate', style='CustomHelvetica.TRadiobutton', variable=vs, value='Tiered', command=lambda v=vs: flat_or_tiered(v))
+        tiered_rate.grid(column=0, row=2, padx=5, pady=5, sticky='w')
+
+        note_for_tiered = (f"Note: Some tariff plans use tiered pricing, meaning the unit rate is not fixed. \n"
+                           f"For example, if monthly electricity consumption is 457 units, the first 150 units \n"
+                           f"may cost $0.15 per unit. After subtracting 150 from 457, 307 units remain. \n"
+                           f"These remaining units may be charged at a higher rate, for example $0.18 per unit. \n"
+                           f"In this case, the first 150 units cost $22.50, and the remaining 307 units cost $55.26. \n"
+                           f"The total amount to pay is $77.76.")
+
+        ToolTip(tiered_rate, msg=note_for_tiered, delay=1.0)
+
+        s_entry.configure(state='enabled')
+        s_lbl.configure(fg=black)
+        tiered_rate.configure(style='CustomDHelvetica.TRadiobutton')
+        flat_rate.configure(style='CustomHelvetica.TRadiobutton')
+
+        def give_me_correct_num(one_from_dict):
+            a = {
+                'gas': 2,
+                'water': 3,
+                'electricity': 4,
+                'heating': 5,
+                'garbage': 6
+            }
+            return a[one_from_dict]
+
+        if isinstance(result_get_v[give_me_correct_num(value_h)], int):
+            vs.set('Flat')
+            s_entry.insert(0, result_get_v[give_me_correct_num(value_h)])
+
+        elif isinstance(result_get_v[give_me_correct_num(value_h)], str):
+            vs.set('Tiered')
+
+            separated_values = result_get_v[give_me_correct_num(value_h)].split(',')
+            entries = [w for w in c_frame.winfo_children() if isinstance(w, ttk.Entry)]
+
+            for widget, separated_value in zip(entries, separated_values):
+                widget.insert(0, separated_value)
+
+        flat_or_tiered(vs)
+
     property_types = ['Flat', 'House']
     property_type = ttk.Combobox(red_property_frm, values=property_types, style='CustomHelvetica.TCombobox',
                                  font=base18, state='readonly', justify='center')
@@ -287,7 +470,7 @@ def redact_pr(pr_id):
     rpr_gas_entry.insert(0, pr_gas if pr_gas else '')
     rpr_gas_entry.focus_force()
 
-    pr_gas_btn = ttk.Button(red_property_frm, width=3, image=settings_img)
+    pr_gas_btn = ttk.Button(red_property_frm, width=3, image=settings_img, command=lambda: tariff_for('gas'))
     pr_gas_btn.grid(column=2, row=3, sticky="e", padx=10)
 
     rpr_water_label = ttk.Label(red_property_frm, text='Water', style='CustomHelvetica.TLabel')
@@ -297,7 +480,7 @@ def redact_pr(pr_id):
     rpr_water_entry.grid(column=1, row=4, sticky="e")
     rpr_water_entry.insert(0, pr_water if pr_water else '')
 
-    pr_water_btn = ttk.Button(red_property_frm, width=3, image=settings_img)
+    pr_water_btn = ttk.Button(red_property_frm, width=3, image=settings_img, command=lambda: tariff_for('water'))
     pr_water_btn.grid(column=2, row=4, sticky="e", padx=10)
 
     rpr_electricity_label = ttk.Label(red_property_frm, text='Electricity', style='CustomHelvetica.TLabel')
@@ -307,7 +490,7 @@ def redact_pr(pr_id):
     rpr_electricity_entry.grid(column=1, row=5, sticky="e")
     rpr_electricity_entry.insert(0, pr_electro if pr_electro else '')
 
-    pr_electricity_btn = ttk.Button(red_property_frm, width=3, image=settings_img)
+    pr_electricity_btn = ttk.Button(red_property_frm, width=3, image=settings_img, command=lambda: tariff_for('electricity'))
     pr_electricity_btn.grid(column=2, row=5, sticky="e", padx=10)
 
     rpr_heating_label = ttk.Label(red_property_frm, text='Heating', style='CustomHelvetica.TLabel')
@@ -317,7 +500,7 @@ def redact_pr(pr_id):
     rpr_heating_entry.grid(column=1, row=6, sticky="e")
     rpr_heating_entry.insert(0, pr_heating if pr_heating else '')
 
-    rpr_heating_btn = ttk.Button(red_property_frm, width=3, image=settings_img)
+    rpr_heating_btn = ttk.Button(red_property_frm, width=3, image=settings_img, command=lambda: tariff_for('heating'))
     rpr_heating_btn.grid(column=2, row=6, sticky="e", padx=10)
 
     rpr_garbage_label = ttk.Label(red_property_frm, text='Garbage', style='CustomHelvetica.TLabel')
@@ -327,7 +510,7 @@ def redact_pr(pr_id):
     rpr_garbage_entry.grid(column=1, row=7, sticky="e")
     rpr_garbage_entry.insert(0, pr_garbage if pr_garbage else '')
 
-    rpr_garbage_btn = ttk.Button(red_property_frm, width=3, image=settings_img)
+    rpr_garbage_btn = ttk.Button(red_property_frm, width=3, image=settings_img, command=lambda: tariff_for('garbage'))
     rpr_garbage_btn.grid(column=2, row=7, sticky="e", padx=10)
 
     def update_values():
@@ -579,11 +762,7 @@ def new_property(_event=None):
         tiered_rate.configure(style='CustomDHelvetica.TRadiobutton')
         flat_rate.configure(style='CustomHelvetica.TRadiobutton')
 
-        for c_child in c_frame.winfo_children():
-            try:
-                c_child['state'] = 'disabled'
-            except KeyError:
-                pass
+        flat_or_tiered(vs)
 
     property_types = ['Flat', 'House']
     property_type = ttk.Combobox(add_property_frm, values=property_types, style='CustomHelvetica.TCombobox', font=base18, state='readonly', justify='center')
@@ -687,9 +866,6 @@ def new_property(_event=None):
                 add_cursor.execute("""INSERT INTO properties (name, type_id, hau_v_id) VALUES (?, ?, ?)""",
                                    (pr_name_entry.get(), 1 if property_type.get() == 'Flat' else 2, lat_hau_id()))
 
-        cursor.execute("""INSERT INTO tariffs (pr_id, gas_t, water_t, electricity_t, heating_t, garbage_t) VALUES (?, ?, ?, ?, ?, ?)""", (next_pr_id, 0, 0, 0, 0, 0))
-        conn.commit()
-
         conn.commit()
         add_property.destroy()
         return refresh_cards()
@@ -699,7 +875,6 @@ def new_property(_event=None):
 
     add_property.bind("<Control-Z>", lambda e, w=add_property: close_window(e, w))
     add_property.bind("<Control-z>", lambda e, w=add_property: close_window(e, w))
-
 ############ END OF ADDING PROPERTY ###############
 
 def yes_del(pr_id):
