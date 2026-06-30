@@ -139,6 +139,24 @@ style.configure(
     font=base14
 )
 
+# Useful dicts
+needed_columns = {
+    'gas': 2,
+    'water': 3,
+    'electricity': 4,
+    'heating': 5,
+    'garbage': 6
+}
+
+# Useful notes
+note_for_tiered = (f"Note: Some tariff plans use tiered pricing, meaning the unit rate is not fixed. \n"
+                   f"For example, if monthly electricity consumption is 457 units, the first 150 units \n"
+                   f"may cost $0.15 per unit. After subtracting 150 from 457, 307 units remain. \n"
+                   f"These remaining units may be charged at a higher rate, for example $0.18 per unit. \n"
+                   f"In this case, the first 150 units cost $22.50, and the remaining 307 units cost $55.26. \n"
+                   f"The total amount to pay is $77.76.")
+
+# Main functions
 def commas_to_dots(my_list):
     return [item.replace(',', '.', 1) for item in my_list]
 
@@ -309,11 +327,8 @@ def redact_pr(pr_id):
         c4_entry = ttk.Entry(c_frame, font=base14, foreground=black, background=white, width=3)
         c4_entry.grid(row=1, column=3)
 
-        conn_get_v = sqlite3.connect(DB_PATH)
-        cursor_get_v = conn_get_v.cursor()
-        cursor_get_v.execute("""SELECT * FROM tariffs WHERE pr_id = ?""", (pr_id,))
-        result_get_v = cursor_get_v.fetchone()
-        conn_get_v.commit()
+        r_cursor.execute("""SELECT * FROM tariffs WHERE pr_id = ?""", (pr_id,))
+        result_get_v = r_cursor.fetchone()
 
         vs = StringVar()
         vs.set('Flat')
@@ -341,7 +356,7 @@ def redact_pr(pr_id):
 
         def confirm_rate_info(v):
             change_v = f'{value_h}_t'
-            insert_value = ''
+            insert_value = None
 
             if v.get() == 'Flat':
                 insert_value = s_entry.get()
@@ -357,13 +372,9 @@ def redact_pr(pr_id):
                         return messagebox.showerror('Error', 'All fields must be filled in', parent=tariff_frm)
 
                 insert_value = sep.join(insert_value) if len(insert_value) / 2 else sep.join(insert_value[:-2])
-                print(insert_value)
 
-
-            conn = sqlite3.connect(DB_PATH)
-            cursor = conn.cursor()
-            cursor.execute(f"""UPDATE tariffs set {change_v} = ? WHERE pr_id = ?""", (insert_value, pr_id))
-            conn.commit()
+            r_cursor.execute(f"""UPDATE tariffs set {change_v} = ? WHERE pr_id = ?""", (insert_value, pr_id))
+            red_conn.commit()
 
             return r_tariff_top.destroy()
 
@@ -378,16 +389,15 @@ def redact_pr(pr_id):
                 flat_or_tiered(vs)
 
             elif value == 'Tiered':
-                s_entry.config(state="disabled")
+                s_entry.configure(state="disabled")
                 s_lbl.configure(fg='gray67')
                 flat_rate.configure(style='CustomDHelvetica.TRadiobutton')
                 tiered_rate.configure(style='CustomHelvetica.TRadiobutton')
 
                 for n_child in c_frame.winfo_children():
-                    try:
+                    if n_child['state']:
                         n_child['state'] = 'normal'
-                    except KeyError:
-                        pass
+
 
         confirm_rate_btn = ttk.Button(tariff_frm, style='CustomHelvetica.TButton', text='Confirm rate info', command=lambda v=vs: confirm_rate_info(v))
         confirm_rate_btn.grid(row=5, column=0, columnspan=3, sticky='ew', pady=(10, 5), padx=5)
@@ -402,13 +412,6 @@ def redact_pr(pr_id):
         tiered_rate = ttk.Radiobutton(tariff_frm, text='Tiered rate', style='CustomHelvetica.TRadiobutton', variable=vs, value='Tiered', command=lambda v=vs: flat_or_tiered(v))
         tiered_rate.grid(column=0, row=2, padx=5, pady=5, sticky='w')
 
-        note_for_tiered = (f"Note: Some tariff plans use tiered pricing, meaning the unit rate is not fixed. \n"
-                           f"For example, if monthly electricity consumption is 457 units, the first 150 units \n"
-                           f"may cost $0.15 per unit. After subtracting 150 from 457, 307 units remain. \n"
-                           f"These remaining units may be charged at a higher rate, for example $0.18 per unit. \n"
-                           f"In this case, the first 150 units cost $22.50, and the remaining 307 units cost $55.26. \n"
-                           f"The total amount to pay is $77.76.")
-
         ToolTip(tiered_rate, msg=note_for_tiered, delay=1.0)
 
         s_entry.configure(state='enabled')
@@ -416,26 +419,21 @@ def redact_pr(pr_id):
         tiered_rate.configure(style='CustomDHelvetica.TRadiobutton')
         flat_rate.configure(style='CustomHelvetica.TRadiobutton')
 
-        needed_columns = {
-            'gas': 2,
-            'water': 3,
-            'electricity': 4,
-            'heating': 5,
-            'garbage': 6
-        }
+        if result_get_v[needed_columns[value_h]]:
+            if not ',' in result_get_v[needed_columns[value_h]]:
+                print(result_get_v[needed_columns[value_h]], 'and', type(result_get_v[needed_columns[value_h]]))
 
-        if isinstance(result_get_v[needed_columns[value_h]], int):
-            vs.set('Flat')
-            s_entry.insert(0, result_get_v[needed_columns[value_h]])
+                vs.set('Flat')
+                s_entry.insert(0, result_get_v[needed_columns[value_h]])
 
-        elif isinstance(result_get_v[needed_columns[value_h]], str):
-            vs.set('Tiered')
+            else:
+                vs.set('Tiered')
 
-            separated_values = result_get_v[needed_columns[value_h]].split(',')
-            entries = [w for w in c_frame.winfo_children() if isinstance(w, ttk.Entry)]
+                separated_values = result_get_v[needed_columns[value_h]].split(',')
+                entries = [w for w in c_frame.winfo_children() if isinstance(w, ttk.Entry)]
 
-            for widget, separated_value in zip(entries, separated_values):
-                widget.insert(0, separated_value)
+                for widget, separated_value in zip(entries, separated_values):
+                    widget.insert(0, separated_value)
 
         flat_or_tiered(vs)
 
@@ -534,12 +532,10 @@ def redact_pr(pr_id):
                 new_values.append(0)
 
         # Updating Values
-        update_conn = sqlite3.connect(DB_PATH)
-        u_cursor = update_conn.cursor()
-        u_cursor.execute("""SELECT gas, water, electricity, heating, garbage FROM hau_values WHERE pr_id = ? ORDER BY hau_v_id DESC""", (pr_id,))
+        r_cursor.execute("""SELECT gas, water, electricity, heating, garbage FROM hau_values WHERE pr_id = ? ORDER BY hau_v_id DESC""", (pr_id,))
 
         prev_values = []
-        for v in u_cursor.fetchone():
+        for v in r_cursor.fetchone():
             try:
                 prev_values.append(float(v))
             except ValueError:
@@ -549,17 +545,17 @@ def redact_pr(pr_id):
             if nv < pv:
                 return messagebox.showerror('Error', 'The new values must be greater than or equal to the previous ones', parent=red_property_frm)
 
-        u_cursor.execute("""INSERT INTO hau_values (pr_id, gas, water, electricity, heating, garbage, date) VALUES (?, ?, ?, ?, ?, ?, ?)""",
+        r_cursor.execute("""INSERT INTO hau_values (pr_id, gas, water, electricity, heating, garbage, date) VALUES (?, ?, ?, ?, ?, ?, ?)""",
                          (pr_id, *new_values, str(date.today())))
-        update_conn.commit()
+        red_conn.commit()
 
-        u_cursor.execute("""SELECT * FROM hau_values WHERE pr_id = ? ORDER BY hau_v_id DESC""", (pr_id,))
-        u_cursor.execute("""UPDATE properties set hau_v_id = ? WHERE id = ?""", (u_cursor.fetchone()[0], pr_id))
-        update_conn.commit()
-        u_cursor.execute("""UPDATE properties set type_id = ? WHERE id = ?""", (1 if property_type.get() == 'Flat' else 2, pr_id))
-        update_conn.commit()
-        u_cursor.execute("""INSERT INTO tariffs (pr_id, gas_t, water_t, electricity_t, heating_t, garbage_t) VALUES (?, ?, ?, ?, ?, ?)""", (pr_id, 0, 0, 0, 0, 0))
-        update_conn.commit()
+        r_cursor.execute("""SELECT * FROM hau_values WHERE pr_id = ? ORDER BY hau_v_id DESC""", (pr_id,))
+        r_cursor.execute("""UPDATE properties set hau_v_id = ? WHERE id = ?""", (r_cursor.fetchone()[0], pr_id))
+        red_conn.commit()
+        r_cursor.execute("""UPDATE properties set type_id = ? WHERE id = ?""", (1 if property_type.get() == 'Flat' else 2, pr_id))
+        red_conn.commit()
+        r_cursor.execute("""INSERT INTO tariffs (pr_id, gas_t, water_t, electricity_t, heating_t, garbage_t) VALUES (?, ?, ?, ?, ?, ?)""", (pr_id, 0, 0, 0, 0, 0))
+        red_conn.commit()
 
         red_pr.destroy()
         return refresh_cards()
@@ -589,6 +585,12 @@ def new_property(_event=None):
 
     add_property_frm = tk.Frame(add_property, bg=white)
     add_property_frm.grid(row=0, column=0)
+
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+    cursor.execute("SELECT seq FROM sqlite_sequence WHERE name='properties'")
+    row = cursor.fetchone()
+    next_pr_id = (row[0] + 1) if row else 1
 
     def tariff_for(value_h):
         tariff_top = tk.Toplevel(root)
@@ -640,6 +642,9 @@ def new_property(_event=None):
         c4_entry = ttk.Entry(c_frame, font=base14, foreground=black, background=white, width=3)
         c4_entry.grid(row=1, column=3)
 
+        cursor.execute("""SELECT * FROM tariffs WHERE pr_id = ?""", (next_pr_id,))
+        result_get_v = cursor.fetchone()
+
         row_t = 2
 
         def add_more(btn, confirm_rb):
@@ -661,21 +666,15 @@ def new_property(_event=None):
 
             row_t += 1
 
-
         vs = StringVar()
         vs.set('Flat')
 
         def confirm_rate_info(v):
-            conn = sqlite3.connect(DB_PATH)
-            cursor = conn.cursor()
-            cursor.execute("SELECT seq FROM sqlite_sequence WHERE name='properties'")
-            row = cursor.fetchone()
-            next_pr_id = (row[0] + 1) if row else 1
-
-            insert_value = ''
+            insert_value = None
 
             if v.get() == 'Flat':
                 insert_value = s_entry.get()
+
                 if not insert_value:
                     return messagebox.showerror('Error', 'All fields must be filled in', parent=tariff_frm)
 
@@ -695,15 +694,11 @@ def new_property(_event=None):
             change_v = f'{value_h}_t'
 
             if not info_ab_t:
-                dbsql = sqlite3.connect(DB_PATH)
-                dbcursor = dbsql.cursor()
-                dbcursor.execute(f"""INSERT INTO tariffs (pr_id, {change_v}) VALUES (?, ?)""", (next_pr_id, insert_value))
-                dbsql.commit()
+                cursor.execute(f"""INSERT INTO tariffs (pr_id, {change_v}) VALUES (?, ?)""", (next_pr_id, insert_value))
+                conn.commit()
             else:
-                dbsql = sqlite3.connect(DB_PATH)
-                dbcursor = dbsql.cursor()
-                dbcursor.execute(f"""UPDATE tariffs set {change_v} = ? WHERE pr_id = ?""", (insert_value, next_pr_id))
-                dbsql.commit()
+                cursor.execute(f"""UPDATE tariffs set {change_v} = ? WHERE pr_id = ?""", (insert_value, next_pr_id))
+                conn.commit()
             return tariff_top.destroy()
 
         confirm_rate_btn = ttk.Button(tariff_frm, style='CustomHelvetica.TButton', text='Confirm rate info', command=lambda v=vs: confirm_rate_info(v))
@@ -746,19 +741,26 @@ def new_property(_event=None):
         tiered_rate = ttk.Radiobutton(tariff_frm, text='Tiered rate', style='CustomHelvetica.TRadiobutton', variable=vs, value='Tiered', command=lambda v=vs: flat_or_tiered(v))
         tiered_rate.grid(column=0, row=2, padx=5, pady=5, sticky='w')
 
-        note_for_tiered = (f"Note: Some tariff plans use tiered pricing, meaning the unit rate is not fixed. \n"
-                           f"For example, if monthly electricity consumption is 457 units, the first 150 units \n"
-                           f"may cost $0.15 per unit. After subtracting 150 from 457, 307 units remain. \n"
-                           f"These remaining units may be charged at a higher rate, for example $0.18 per unit. \n"
-                           f"In this case, the first 150 units cost $22.50, and the remaining 307 units cost $55.26. \n"
-                           f"The total amount to pay is $77.76.")
-
         ToolTip(tiered_rate, msg=note_for_tiered, delay=1.0)
 
         s_entry.configure(state='enabled')
         s_lbl.configure(fg=black)
         tiered_rate.configure(style='CustomDHelvetica.TRadiobutton')
         flat_rate.configure(style='CustomHelvetica.TRadiobutton')
+
+        if result_get_v[needed_columns[value_h]]:
+            if not ',' in result_get_v[needed_columns[value_h]]:
+                vs.set('Flat')
+                s_entry.insert(0, result_get_v[needed_columns[value_h]])
+
+            else:
+                vs.set('Tiered')
+
+                separated_values = result_get_v[needed_columns[value_h]].split(',')
+                entries = [w for w in c_frame.winfo_children() if isinstance(w, ttk.Entry)]
+
+                for widget, separated_value in zip(entries, separated_values):
+                    widget.insert(0, separated_value)
 
         flat_or_tiered(vs)
 
@@ -842,12 +844,6 @@ def new_property(_event=None):
                 return messagebox.showerror('Error', 'Enter the numerical values', parent=add_property_frm)
 
         # Adding Values
-        conn = sqlite3.connect(DB_PATH)
-        cursor = conn.cursor()
-        cursor.execute("SELECT seq FROM sqlite_sequence WHERE name='properties'")
-        row = cursor.fetchone()
-        next_pr_id = (row[0] + 1) if row else 1
-
         with sqlite3.connect(DB_PATH) as add_sql_conn:
             add_cursor = add_sql_conn.cursor()
             add_cursor.execute("""INSERT INTO hau_values (gas, water, electricity, heating, garbage, date, pr_id) VALUES (?, ?, ?, ?, ?, ?, ?)""",
@@ -868,7 +864,7 @@ def new_property(_event=None):
         add_property.destroy()
         return refresh_cards()
 
-    add_pr_btn = ttk.Button(add_property_frm, width=10, text='+', style='CustomHelvetica.TButton', command=add_record)
+    add_pr_btn = ttk.Button(add_property_frm, width=10, text='Add Property', style='CustomHelvetica.TButton', command=add_record)
     add_pr_btn.grid(column=0, row=8, columnspan=3, sticky='N', padx=5, pady=20)
 
     add_property.bind("<Control-Z>", lambda e, w=add_property: close_window(e, w))
