@@ -340,6 +340,7 @@ def redact_pr(pr_id):
 
         r_cursor.execute("""SELECT * FROM tariffs WHERE pr_id = ?""", (pr_id,))
         result_get_v = r_cursor.fetchone()
+        red_conn.commit()
 
         vs = StringVar()
         vs.set('Flat')
@@ -421,7 +422,6 @@ def redact_pr(pr_id):
                     except KeyError:
                         pass
 
-
         confirm_rate_btn = ttk.Button(tariff_frm, style='CustomHelvetica.TButton', text='Confirm rate info', command=lambda v=vs: confirm_rate_info(v))
         confirm_rate_btn.grid(row=5, column=0, columnspan=3, sticky='ew', pady=(10, 5), padx=5)
 
@@ -445,8 +445,6 @@ def redact_pr(pr_id):
         if result_get_v:
             if result_get_v[needed_columns[value_h]]:
                 if not separator in result_get_v[needed_columns[value_h]]:
-                    print(result_get_v[needed_columns[value_h]], 'and', type(result_get_v[needed_columns[value_h]]))
-
                     vs.set('Flat')
                     s_entry.insert(0, result_get_v[needed_columns[value_h]])
 
@@ -564,6 +562,8 @@ def redact_pr(pr_id):
                 prev_values.append(float(v))
             except ValueError:
                 prev_values.append(0)
+
+        red_conn.commit()
 
         for pv, nv in zip(prev_values, new_values):
             if nv < pv:
@@ -903,6 +903,8 @@ def new_property(_event=None):
 
 def yes_del(pr_id):
     with sqlite3.connect(DB_PATH) as sql_del_info:
+        sql_del_info.execute("PRAGMA foreign_keys = ON")
+
         cur = sql_del_info.cursor()
         cur.execute("""DELETE FROM properties WHERE id=?""", (pr_id,))
     refresh_cards()
