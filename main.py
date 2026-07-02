@@ -156,12 +156,23 @@ note_for_tiered = (f"Note: Some tariff plans use tiered pricing, meaning the uni
                    f"In this case, the first 150 units cost $22.50, and the remaining 307 units cost $55.26. \n"
                    f"The total amount to pay is $77.76.")
 
+# Useful variables
+separator = '|'
+
 # Main functions
-def commas_to_dots(my_list):
-    return [item.replace(',', '.', 1) for item in my_list]
+def commas_to_dots(my_list, commas_qty=1):
+    return [item.replace(',', '.', commas_qty) for item in my_list]
 
 def close_window(_event, window):
     window.destroy()
+
+def check_for_numeric(value_list, parent_frame):
+    for value_f in commas_to_dots(value_list):
+        try:
+            float(value_f)
+        except ValueError:
+            return messagebox.showerror('Error', 'Enter the numerical values', parent=parent_frame)
+    return None
 
 # Loading real estate listings on the home screen
 def refresh_cards():
@@ -364,14 +375,19 @@ def redact_pr(pr_id):
                     return messagebox.showerror('Error', 'All fields must be filled in', parent=tariff_frm)
 
             elif v.get() == 'Tiered':
-                sep = ','
                 insert_value = [er_ch.get() for er_ch in c_frame.winfo_children() if isinstance(er_ch, ttk.Entry)]
 
                 for val in insert_value:
                     if not val:
                         return messagebox.showerror('Error', 'All fields must be filled in', parent=tariff_frm)
 
-                insert_value = sep.join(insert_value) if len(insert_value) / 2 else sep.join(insert_value[:-2])
+                for v in commas_to_dots(insert_value, len(insert_value)):
+                    try:
+                        float(v)
+                    except ValueError:
+                        return messagebox.showerror('Error', 'Enter the numerical values', parent=tariff_frm)
+
+                insert_value = separator.join(insert_value) if len(insert_value) / 2 else separator.join(insert_value[:-2])
 
             r_cursor.execute(f"""UPDATE tariffs set {change_v} = ? WHERE pr_id = ?""", (insert_value, pr_id))
             red_conn.commit()
@@ -386,17 +402,24 @@ def redact_pr(pr_id):
                 s_lbl.configure(fg=black)
                 tiered_rate.configure(style='CustomDHelvetica.TRadiobutton')
                 flat_rate.configure(style='CustomHelvetica.TRadiobutton')
-                flat_or_tiered(vs)
+
+                for d_child in c_frame.winfo_children():
+                    try:
+                        d_child['state'] = 'disabled'
+                    except KeyError:
+                        pass
 
             elif value == 'Tiered':
-                s_entry.configure(state="disabled")
+                s_entry.config(state="disabled")
                 s_lbl.configure(fg='gray67')
                 flat_rate.configure(style='CustomDHelvetica.TRadiobutton')
                 tiered_rate.configure(style='CustomHelvetica.TRadiobutton')
 
                 for n_child in c_frame.winfo_children():
-                    if n_child['state']:
+                    try:
                         n_child['state'] = 'normal'
+                    except KeyError:
+                        pass
 
 
         confirm_rate_btn = ttk.Button(tariff_frm, style='CustomHelvetica.TButton', text='Confirm rate info', command=lambda v=vs: confirm_rate_info(v))
@@ -419,21 +442,22 @@ def redact_pr(pr_id):
         tiered_rate.configure(style='CustomDHelvetica.TRadiobutton')
         flat_rate.configure(style='CustomHelvetica.TRadiobutton')
 
-        if result_get_v[needed_columns[value_h]]:
-            if not ',' in result_get_v[needed_columns[value_h]]:
-                print(result_get_v[needed_columns[value_h]], 'and', type(result_get_v[needed_columns[value_h]]))
+        if result_get_v:
+            if result_get_v[needed_columns[value_h]]:
+                if not separator in result_get_v[needed_columns[value_h]]:
+                    print(result_get_v[needed_columns[value_h]], 'and', type(result_get_v[needed_columns[value_h]]))
 
-                vs.set('Flat')
-                s_entry.insert(0, result_get_v[needed_columns[value_h]])
+                    vs.set('Flat')
+                    s_entry.insert(0, result_get_v[needed_columns[value_h]])
 
-            else:
-                vs.set('Tiered')
+                else:
+                    vs.set('Tiered')
 
-                separated_values = result_get_v[needed_columns[value_h]].split(',')
-                entries = [w for w in c_frame.winfo_children() if isinstance(w, ttk.Entry)]
+                    separated_values = result_get_v[needed_columns[value_h]].split(separator)
+                    entries = [w for w in c_frame.winfo_children() if isinstance(w, ttk.Entry)]
 
-                for widget, separated_value in zip(entries, separated_values):
-                    widget.insert(0, separated_value)
+                    for widget, separated_value in zip(entries, separated_values):
+                        widget.insert(0, separated_value)
 
         flat_or_tiered(vs)
 
@@ -679,14 +703,19 @@ def new_property(_event=None):
                     return messagebox.showerror('Error', 'All fields must be filled in', parent=tariff_frm)
 
             elif v.get() == 'Tiered':
-                sep = ','
                 insert_value = [er_ch.get() for er_ch in c_frame.winfo_children() if isinstance(er_ch, ttk.Entry)]
 
                 for val in insert_value:
                     if not val:
                         return messagebox.showerror('Error', 'All fields must be filled in', parent=tariff_frm)
 
-                insert_value = sep.join(insert_value) if len(insert_value) / 2 else sep.join(insert_value[:-2])
+                for v in commas_to_dots(insert_value, len(insert_value)):
+                    try:
+                        float(v)
+                    except ValueError:
+                        return messagebox.showerror('Error', 'Enter the numerical values', parent=tariff_frm)
+
+                insert_value = separator.join(insert_value) if len(insert_value) / 2 else separator.join(insert_value[:-2])
 
             cursor.execute("""SELECT * FROM tariffs WHERE pr_id = ?""", (next_pr_id,))
             info_ab_t = cursor.fetchall()
@@ -748,19 +777,20 @@ def new_property(_event=None):
         tiered_rate.configure(style='CustomDHelvetica.TRadiobutton')
         flat_rate.configure(style='CustomHelvetica.TRadiobutton')
 
-        if result_get_v[needed_columns[value_h]]:
-            if not ',' in result_get_v[needed_columns[value_h]]:
-                vs.set('Flat')
-                s_entry.insert(0, result_get_v[needed_columns[value_h]])
+        if result_get_v:
+            if result_get_v[needed_columns[value_h]]:
+                if not separator in result_get_v[needed_columns[value_h]]:
+                    vs.set('Flat')
+                    s_entry.insert(0, result_get_v[needed_columns[value_h]])
 
-            else:
-                vs.set('Tiered')
+                else:
+                    vs.set('Tiered')
 
-                separated_values = result_get_v[needed_columns[value_h]].split(',')
-                entries = [w for w in c_frame.winfo_children() if isinstance(w, ttk.Entry)]
+                    separated_values = result_get_v[needed_columns[value_h]].split(separator)
+                    entries = [w for w in c_frame.winfo_children() if isinstance(w, ttk.Entry)]
 
-                for widget, separated_value in zip(entries, separated_values):
-                    widget.insert(0, separated_value)
+                    for widget, separated_value in zip(entries, separated_values):
+                        widget.insert(0, separated_value)
 
         flat_or_tiered(vs)
 
