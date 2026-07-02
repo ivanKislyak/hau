@@ -25,7 +25,7 @@ def db():
             cursor.executescript(sql_script.read())
 
 # Current version
-c_version = '(0.2)'
+c_version = '(0.3)'
 
 # App
 root = tk.Tk()
@@ -50,7 +50,9 @@ pencil_img = ImageTk.PhotoImage(resize_img(Image.open(ICONS_PATH / 'pencil1.png'
 trash_img = ImageTk.PhotoImage(resize_img(Image.open(ICONS_PATH / 'trash.png'), 20, 20))
 house_img = ImageTk.PhotoImage(resize_img(Image.open(ICONS_PATH / 'house.png'), 20, 20))
 apartment_img = ImageTk.PhotoImage(resize_img(Image.open(ICONS_PATH / 'apartment.png'), 18, 22))
-settings_img = ImageTk.PhotoImage(resize_img(Image.open(ICONS_PATH / 'settings.png'), 20, 20))
+settings_img = ImageTk.PhotoImage(resize_img(Image.open(ICONS_PATH / 'settings.png'), 20, 19))
+settings_w_img = ImageTk.PhotoImage(resize_img(Image.open(ICONS_PATH / 'settings_w_r.png'), 20, 19))
+settings_wt_img = ImageTk.PhotoImage(resize_img(Image.open(ICONS_PATH / 'settings_wt_r.png'), 20, 19))
 
 # FGs
 dp_sea = '#11384D'
@@ -174,6 +176,27 @@ def check_for_numeric(value_list, parent_frame):
             return messagebox.showerror('Error', 'Enter the numerical values', parent=parent_frame)
     return None
 
+def setting_rates(entry: ttk.Entry, n_pr_id, cursor):
+    text_inside = entry.get()
+    needed_row = entry.grid_info()['row']
+    cursor.execute("""SELECT * FROM tariffs WHERE pr_id = ?""", (n_pr_id,))
+
+    result = cursor.fetchone()
+    parent_name = entry.winfo_parent()
+
+    parent_of_entry = entry.nametowidget(parent_name)
+
+    if result:
+        for ch in parent_of_entry.winfo_children():
+                if ch.grid_info()['row'] == needed_row and isinstance(ch, ttk.Button):
+
+                    if not text_inside:
+                        ch.configure(image=settings_img)
+                    elif text_inside and result[needed_row - 1] is not None and str(result[needed_row - 1]) != '0':
+                        ch.configure(image=settings_w_img)
+                    else:
+                        ch.configure(image=settings_wt_img)
+
 # Loading real estate listings on the home screen
 def refresh_cards():
     for ch in canvas_fr.winfo_children():
@@ -264,8 +287,8 @@ def redact_pr(pr_id):
 
     r_cursor.execute("""SELECT * FROM hau_values WHERE hau_v_id = ?""", (pr_info[-1],))
     hau_v_info = r_cursor.fetchone()
-
     red_conn.commit()
+
     red_pr = Toplevel(root)
     red_pr.focus_force()
     red_pr.title(f'Updating values for {pr_info[1]}')
@@ -486,10 +509,11 @@ def redact_pr(pr_id):
     rpr_gas_entry = ttk.Entry(red_property_frm, font=base14, foreground=black, background=white)
     rpr_gas_entry.grid(column=1, row=3, sticky="e")
     rpr_gas_entry.insert(0, pr_gas if pr_gas else '')
+    rpr_gas_entry.bind("<KeyRelease>", lambda e: setting_rates(rpr_gas_entry, pr_id, r_cursor))
     rpr_gas_entry.focus_force()
 
-    pr_gas_btn = ttk.Button(red_property_frm, width=3, image=settings_img, command=lambda: tariff_for('gas'))
-    pr_gas_btn.grid(column=2, row=3, sticky="e", padx=10)
+    rpr_gas_btn = ttk.Button(red_property_frm, width=3, image=settings_img, command=lambda: tariff_for('gas'), text='*')
+    rpr_gas_btn.grid(column=2, row=3, sticky="e", padx=10)
 
     rpr_water_label = ttk.Label(red_property_frm, text='Water', style='CustomHelvetica.TLabel')
     rpr_water_label.grid(column=0, row=4, sticky="w", padx=10)
@@ -497,6 +521,7 @@ def redact_pr(pr_id):
     rpr_water_entry = ttk.Entry(red_property_frm, font=base14, foreground=black, background=white)
     rpr_water_entry.grid(column=1, row=4, sticky="e")
     rpr_water_entry.insert(0, pr_water if pr_water else '')
+    rpr_water_entry.bind("<KeyRelease>", lambda e: setting_rates(rpr_water_entry, pr_id, r_cursor))
 
     pr_water_btn = ttk.Button(red_property_frm, width=3, image=settings_img, command=lambda: tariff_for('water'))
     pr_water_btn.grid(column=2, row=4, sticky="e", padx=10)
@@ -507,6 +532,7 @@ def redact_pr(pr_id):
     rpr_electricity_entry = ttk.Entry(red_property_frm, font=base14, foreground=black, background=white)
     rpr_electricity_entry.grid(column=1, row=5, sticky="e")
     rpr_electricity_entry.insert(0, pr_electro if pr_electro else '')
+    rpr_electricity_entry.bind("<KeyRelease>", lambda e: setting_rates(rpr_electricity_entry, pr_id, r_cursor))
 
     pr_electricity_btn = ttk.Button(red_property_frm, width=3, image=settings_img, command=lambda: tariff_for('electricity'))
     pr_electricity_btn.grid(column=2, row=5, sticky="e", padx=10)
@@ -517,6 +543,7 @@ def redact_pr(pr_id):
     rpr_heating_entry = ttk.Entry(red_property_frm, font=base14, foreground=black, background=white)
     rpr_heating_entry.grid(column=1, row=6, sticky="e")
     rpr_heating_entry.insert(0, pr_heating if pr_heating else '')
+    rpr_heating_entry.bind("<KeyRelease>", lambda e: setting_rates(rpr_heating_entry, pr_id, r_cursor))
 
     rpr_heating_btn = ttk.Button(red_property_frm, width=3, image=settings_img, command=lambda: tariff_for('heating'))
     rpr_heating_btn.grid(column=2, row=6, sticky="e", padx=10)
@@ -527,6 +554,7 @@ def redact_pr(pr_id):
     rpr_garbage_entry = ttk.Entry(red_property_frm, font=base14, foreground=black, background=white)
     rpr_garbage_entry.grid(column=1, row=7, sticky="e")
     rpr_garbage_entry.insert(0, pr_garbage if pr_garbage else '')
+    rpr_garbage_entry.bind("<KeyRelease>", lambda e: setting_rates(rpr_garbage_entry, pr_id, r_cursor))
 
     rpr_garbage_btn = ttk.Button(red_property_frm, width=3, image=settings_img, command=lambda: tariff_for('garbage'))
     rpr_garbage_btn.grid(column=2, row=7, sticky="e", padx=10)
@@ -818,6 +846,8 @@ def new_property(_event=None):
 
     pr_gas_entry = ttk.Entry(add_property_frm, font=base14, foreground=black, background=white)
     pr_gas_entry.grid(column=1, row=3, sticky="e")
+    pr_gas_entry.bind("<KeyRelease>", lambda e: setting_rates(pr_gas_entry, next_pr_id, cursor))
+    pr_gas_entry.focus_force()
 
     pr_gas_btn = ttk.Button(add_property_frm, width=3, image=settings_img, command=lambda: tariff_for('gas'))
     pr_gas_btn.grid(column=2, row=3, sticky="e", padx=10)
@@ -827,6 +857,7 @@ def new_property(_event=None):
 
     pr_water_entry = ttk.Entry(add_property_frm, font=base14, foreground=black, background=white)
     pr_water_entry.grid(column=1, row=4, sticky="e")
+    pr_water_entry.bind("<KeyRelease>", lambda e: setting_rates(pr_water_entry, next_pr_id, cursor))
 
     pr_water_btn = ttk.Button(add_property_frm, width=3, image=settings_img, command=lambda: tariff_for('water'))
     pr_water_btn.grid(column=2, row=4, sticky="e", padx=10)
@@ -836,6 +867,7 @@ def new_property(_event=None):
 
     pr_electricity_entry = ttk.Entry(add_property_frm, font=base14, foreground=black, background=white)
     pr_electricity_entry.grid(column=1, row=5, sticky="e")
+    pr_electricity_entry.bind("<KeyRelease>", lambda e: setting_rates(pr_electricity_entry, next_pr_id, cursor))
 
     pr_electricity_btn = ttk.Button(add_property_frm, width=3, image=settings_img, command=lambda: tariff_for('electricity'))
     pr_electricity_btn.grid(column=2, row=5, sticky="e", padx=10)
@@ -845,6 +877,7 @@ def new_property(_event=None):
 
     pr_heating_entry = ttk.Entry(add_property_frm, font=base14, foreground=black, background=white)
     pr_heating_entry.grid(column=1, row=6, sticky="e")
+    pr_heating_entry.bind("<KeyRelease>", lambda e: setting_rates(pr_heating_entry, next_pr_id, cursor))
 
     pr_heating_btn = ttk.Button(add_property_frm, width=3, image=settings_img, command=lambda: tariff_for('heating'))
     pr_heating_btn.grid(column=2, row=6, sticky="e", padx=10)
@@ -854,6 +887,7 @@ def new_property(_event=None):
 
     pr_garbage_entry = ttk.Entry(add_property_frm, font=base14, foreground=black, background=white)
     pr_garbage_entry.grid(column=1, row=7, sticky="e")
+    pr_garbage_entry.bind("<KeyRelease>", lambda e: setting_rates(pr_garbage_entry, next_pr_id, cursor))
 
     pr_garbage_btn = ttk.Button(add_property_frm, width=3, image=settings_img, command=lambda: tariff_for('garbage'))
     pr_garbage_btn.grid(column=2, row=7, sticky="e", padx=10)
@@ -894,7 +928,7 @@ def new_property(_event=None):
         add_property.destroy()
         return refresh_cards()
 
-    add_pr_btn = ttk.Button(add_property_frm, width=10, text='Add Property', style='CustomHelvetica.TButton', command=add_record)
+    add_pr_btn = ttk.Button(add_property_frm, width=15, text='Add Property', style='CustomHelvetica.TButton', command=add_record)
     add_pr_btn.grid(column=0, row=8, columnspan=3, sticky='N', padx=5, pady=20)
 
     add_property.bind("<Control-Z>", lambda e, w=add_property: close_window(e, w))
