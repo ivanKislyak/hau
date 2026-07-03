@@ -188,10 +188,10 @@ def setting_rates(entry: ttk.Entry, n_btn: ttk.Button, n_pr_id, cursor):
 
     result = cursor.fetchone()
 
-    if text_inside and result:
-        if not text_inside:
-            n_btn.configure(image=settings_img)
-        elif text_inside and result[needed_row - 1] is not None and str(result[needed_row - 1]) != '0':
+    if not text_inside:
+        n_btn.configure(image=settings_img)
+    elif text_inside and result:
+        if text_inside and result[needed_row - 1] is not None and str(result[needed_row - 1]) != '0':
             n_btn.configure(image=settings_w_img)
         else:
             n_btn.configure(image=settings_wt_img)
