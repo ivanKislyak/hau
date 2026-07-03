@@ -522,7 +522,6 @@ def redact_pr(pr_id):
     rpr_gas_entry = ttk.Entry(red_property_frm, font=base14, foreground=black, background=white)
     rpr_gas_entry.grid(column=1, row=3, sticky="e")
     rpr_gas_entry.insert(0, pr_gas if pr_gas else '')
-    rpr_gas_entry.bind("<KeyRelease>", lambda e: setting_rates(rpr_gas_entry, rpr_gas_btn, pr_id, r_cursor))
     rpr_gas_entry.focus_force()
 
     rpr_gas_btn = ttk.Button(red_property_frm, width=3, image=settings_img, command=lambda: tariff_for('gas', rpr_gas_entry, rpr_gas_btn), text='*')
@@ -534,10 +533,9 @@ def redact_pr(pr_id):
     rpr_water_entry = ttk.Entry(red_property_frm, font=base14, foreground=black, background=white)
     rpr_water_entry.grid(column=1, row=4, sticky="e")
     rpr_water_entry.insert(0, pr_water if pr_water else '')
-    rpr_water_entry.bind("<KeyRelease>", lambda e: setting_rates(rpr_water_entry, pr_water_btn, pr_id, r_cursor))
 
-    pr_water_btn = ttk.Button(red_property_frm, width=3, image=settings_img, command=lambda: tariff_for('water', rpr_water_entry, pr_water_btn))
-    pr_water_btn.grid(column=2, row=4, sticky="e", padx=10)
+    rpr_water_btn = ttk.Button(red_property_frm, width=3, image=settings_img, command=lambda: tariff_for('water', rpr_water_entry, rpr_water_btn))
+    rpr_water_btn.grid(column=2, row=4, sticky="e", padx=10)
 
     rpr_electricity_label = ttk.Label(red_property_frm, text='Electricity', style='CustomHelvetica.TLabel')
     rpr_electricity_label.grid(column=0, row=5, sticky="w", padx=10)
@@ -545,10 +543,10 @@ def redact_pr(pr_id):
     rpr_electricity_entry = ttk.Entry(red_property_frm, font=base14, foreground=black, background=white)
     rpr_electricity_entry.grid(column=1, row=5, sticky="e")
     rpr_electricity_entry.insert(0, pr_electro if pr_electro else '')
-    rpr_electricity_entry.bind("<KeyRelease>", lambda e: setting_rates(rpr_electricity_entry, pr_electricity_btn, pr_id, r_cursor))
 
-    pr_electricity_btn = ttk.Button(red_property_frm, width=3, image=settings_img, command=lambda: tariff_for('electricity', rpr_electricity_entry, pr_electricity_btn))
-    pr_electricity_btn.grid(column=2, row=5, sticky="e", padx=10)
+    rpr_electricity_btn = ttk.Button(red_property_frm, width=3, image=settings_img,
+                                     command=lambda: tariff_for('electricity', rpr_electricity_entry, rpr_electricity_btn))
+    rpr_electricity_btn.grid(column=2, row=5, sticky="e", padx=10)
 
     rpr_heating_label = ttk.Label(red_property_frm, text='Heating', style='CustomHelvetica.TLabel')
     rpr_heating_label.grid(column=0, row=6, sticky="w", padx=10)
@@ -556,9 +554,9 @@ def redact_pr(pr_id):
     rpr_heating_entry = ttk.Entry(red_property_frm, font=base14, foreground=black, background=white)
     rpr_heating_entry.grid(column=1, row=6, sticky="e")
     rpr_heating_entry.insert(0, pr_heating if pr_heating else '')
-    rpr_heating_entry.bind("<KeyRelease>", lambda e: setting_rates(rpr_heating_entry, rpr_heating_btn, pr_id, r_cursor))
 
-    rpr_heating_btn = ttk.Button(red_property_frm, width=3, image=settings_img, command=lambda: tariff_for('heating', rpr_heating_entry, rpr_heating_btn))
+    rpr_heating_btn = ttk.Button(red_property_frm, width=3, image=settings_img,
+                                 command=lambda: tariff_for('heating', rpr_heating_entry, rpr_heating_btn))
     rpr_heating_btn.grid(column=2, row=6, sticky="e", padx=10)
 
     rpr_garbage_label = ttk.Label(red_property_frm, text='Garbage', style='CustomHelvetica.TLabel')
@@ -567,10 +565,25 @@ def redact_pr(pr_id):
     rpr_garbage_entry = ttk.Entry(red_property_frm, font=base14, foreground=black, background=white)
     rpr_garbage_entry.grid(column=1, row=7, sticky="e")
     rpr_garbage_entry.insert(0, pr_garbage if pr_garbage else '')
-    rpr_garbage_entry.bind("<KeyRelease>", lambda e: setting_rates(rpr_garbage_entry, rpr_garbage_btn, pr_id, r_cursor))
 
     rpr_garbage_btn = ttk.Button(red_property_frm, width=3, image=settings_img, command=lambda: tariff_for('garbage', rpr_garbage_entry, rpr_garbage_btn))
     rpr_garbage_btn.grid(column=2, row=7, sticky="e", padx=10)
+
+    # Updating rate buttons
+    entry_buttons = {
+        rpr_gas_entry: rpr_gas_btn,
+        rpr_water_entry: rpr_water_btn,
+        rpr_electricity_entry: rpr_electricity_btn,
+        rpr_heating_entry: rpr_heating_btn,
+        rpr_garbage_entry: rpr_garbage_btn,
+    }
+
+    for entry, e_btn in entry_buttons.items():
+        entry.bind(
+            "<KeyRelease>",
+            lambda e, ent=entry, b=e_btn: setting_rates(ent, b, pr_id, r_cursor)
+        )
+        setting_rates(entry, e_btn, pr_id, r_cursor)
 
     def update_values():
         # Checking Values
@@ -854,7 +867,6 @@ def new_property(_event=None):
 
     pr_heating_entry = ttk.Entry(add_property_frm, font=base14, foreground=black, background=white)
     pr_heating_entry.grid(column=1, row=6, sticky="e")
-    pr_heating_entry.bind("<KeyRelease>", lambda e: setting_rates(pr_heating_entry, pr_heating_btn, next_pr_id, cursor))
 
     pr_heating_btn = ttk.Button(add_property_frm, width=3, image=settings_img, command=lambda: tariff_for('heating', pr_heating_entry, pr_heating_btn))
     pr_heating_btn.grid(column=2, row=6, sticky="e", padx=10)
@@ -864,10 +876,25 @@ def new_property(_event=None):
 
     pr_garbage_entry = ttk.Entry(add_property_frm, font=base14, foreground=black, background=white)
     pr_garbage_entry.grid(column=1, row=7, sticky="e")
-    pr_garbage_entry.bind("<KeyRelease>", lambda e: setting_rates(pr_garbage_entry, pr_garbage_btn, next_pr_id, cursor))
 
     pr_garbage_btn = ttk.Button(add_property_frm, width=3, image=settings_img, command=lambda: tariff_for('garbage', pr_garbage_entry, pr_garbage_btn))
     pr_garbage_btn.grid(column=2, row=7, sticky="e", padx=10)
+
+    # Updating rate buttons
+    entry_buttons = {
+        pr_gas_entry: pr_gas_btn,
+        pr_water_entry: pr_water_btn,
+        pr_electricity_entry: pr_electricity_btn,
+        pr_heating_entry: pr_heating_btn,
+        pr_garbage_entry: pr_garbage_btn,
+    }
+
+    for entry, e_btn in entry_buttons.items():
+        entry.bind(
+            "<KeyRelease>",
+            lambda e, ent=entry, b=e_btn: setting_rates(ent, b, next_pr_id, cursor)
+        )
+        setting_rates(entry, e_btn, next_pr_id, cursor)
 
     def add_record():
         # Checking Values
