@@ -2,6 +2,7 @@ from tkinter import *
 import tkinter as tk
 from tkinter import ttk
 from tkinter import messagebox
+import customtkinter as ctk
 from pathlib import Path
 import sqlite3
 from datetime import date
@@ -54,10 +55,13 @@ settings_img = ImageTk.PhotoImage(resize_img(Image.open(ICONS_PATH / 'settings.p
 settings_w_img = ImageTk.PhotoImage(resize_img(Image.open(ICONS_PATH / 'settings_w_r.png'), 20, 19))
 settings_wt_img = ImageTk.PhotoImage(resize_img(Image.open(ICONS_PATH / 'settings_wt_r.png'), 20, 19))
 
-# FGs
+# Colors
 dp_sea = '#11384D'
 white = '#FFFFFF'
 black = '#000000'
+war_fg = '#edc651'
+war_bd = '#c29e32'
+war_text = '#4f4114'
 
 # Fonts
 base18 = ("Helvetica", 18)
@@ -174,6 +178,7 @@ def close_window(_event, window):
 
 def setting_rates(entry: ttk.Entry | tk.Entry, n_btn: ttk.Button | tk.Button, n_pr_id: int, cursor: sqlite3.Cursor, entry_buttons_dict: dict, war_label) -> None:
     """Update rate button icon depending on entered value and configured tariff"""
+    ToolTip(war_label, msg='If you leave the value as “no rate,” then when the values are updated, the difference between the values will not affect the total', delay=1.0)
     cursor.execute("""SELECT * FROM tariffs WHERE pr_id = ?""", (n_pr_id,))
     text_inside = entry.get()
     needed_row = entry.grid_info()['row']
@@ -200,7 +205,7 @@ def setting_rates(entry: ttk.Entry | tk.Entry, n_btn: ttk.Button | tk.Button, n_
             w_img = False
 
     if not w_img:
-        war_label.grid(row=11, column=1, columnspan=2, sticky='es')
+        war_label.grid(row=11, column=1, columnspan=2, sticky='es', padx=10, pady=(15, 5))
     else:
         war_label.grid_remove()
 
@@ -595,7 +600,17 @@ def redact_pr(pr_id):
         rpr_heating_entry: rpr_heating_btn,
         rpr_garbage_entry: rpr_garbage_btn,
     }
-    war_label = Label(red_property_frm, bg='#d4af7d', text='You have unfilled rates')
+
+    war_label = ctk.CTkLabel(
+        red_property_frm,
+        text="You have unfilled rates",
+        fg_color=war_fg,
+        text_color=war_text,
+        corner_radius=8,
+        font=base_bold14,
+        border_color=war_bd,
+        border_width=2
+    )
 
     for entry, e_btn in entry_buttons.items():
         entry.bind(
@@ -910,7 +925,16 @@ def new_property(_event=None):
         pr_garbage_entry: pr_garbage_btn,
     }
 
-    war_label = Label(add_property_frm)
+    war_label = ctk.CTkLabel(
+        add_property_frm,
+        text="You have unfilled rates",
+        fg_color=war_fg,
+        text_color=war_text,
+        corner_radius=8,
+        font=base_bold14,
+        border_color=war_bd,
+        border_width=2
+    )
 
     for entry, e_btn in entry_buttons.items():
         entry.bind(
