@@ -33,7 +33,7 @@ root = tk.Tk()
 root.title("Hau " + c_version)
 root.iconbitmap(default=str(ICONS_PATH / "hau_logo.ico"))
 root.configure(bg="white")
-root.minsize(500, 300)
+root.minsize(500, 350)
 root.columnconfigure(0, weight=1)
 root.rowconfigure(0, weight=1)
 
@@ -50,7 +50,7 @@ def resize_img(img, a, b):
 pencil_img = ImageTk.PhotoImage(resize_img(Image.open(ICONS_PATH / 'pencil1.png'), 20, 20))
 trash_img = ImageTk.PhotoImage(resize_img(Image.open(ICONS_PATH / 'trash.png'), 20, 20))
 house_img = ImageTk.PhotoImage(resize_img(Image.open(ICONS_PATH / 'house.png'), 20, 20))
-apartment_img = ImageTk.PhotoImage(resize_img(Image.open(ICONS_PATH / 'apartment.png'), 18, 22))
+apartment_img = ImageTk.PhotoImage(resize_img(Image.open(ICONS_PATH / 'apartment.png'), 15, 22))
 settings_img = ImageTk.PhotoImage(resize_img(Image.open(ICONS_PATH / 'settings.png'), 20, 19))
 settings_w_img = ImageTk.PhotoImage(resize_img(Image.open(ICONS_PATH / 'settings_w_r.png'), 20, 19))
 settings_wt_img = ImageTk.PhotoImage(resize_img(Image.open(ICONS_PATH / 'settings_wt_r.png'), 20, 19))
@@ -312,6 +312,9 @@ def refresh_cards():
                     cursor.execute("""SELECT * FROM hau_values WHERE hau_v_id = ?""", (hau_values[0][0],))
                     res = f'Last update: {cursor.fetchone()[-1]}'
                     Label(card_fr, text=res, bg=white, fg='grey').grid(row=rcount, column=0, sticky=W, padx=(10, 0), pady=(15, 0))
+
+                    calc_res = Label(card_fr, text='', bg=white, fg='green', font=base14)
+                    calc_res.grid(row=rcount, column=2, sticky=E, padx=(0, 10), pady=(15, 0))
 
                     def del_pr(pr_id):
                         am = messagebox.askquestion('Are you sure?', 'Are you sure for deleting?')
@@ -662,18 +665,16 @@ def redact_pr(pr_id):
         red_conn.commit()
 
         r_cursor.execute("""SELECT * FROM hau_values WHERE pr_id = ? ORDER BY hau_v_id DESC""", (pr_id,))
-        r_cursor.execute("""UPDATE properties set hau_v_id = ? WHERE id = ?""", (r_cursor.fetchone()[0], pr_id))
-        red_conn.commit()
-        r_cursor.execute("""UPDATE properties set type_id = ? WHERE id = ?""", (1 if property_type.get() == 'Flat' else 2, pr_id))
-        red_conn.commit()
-        r_cursor.execute("""INSERT INTO tariffs (pr_id, gas_t, water_t, electricity_t, heating_t, garbage_t) VALUES (?, ?, ?, ?, ?, ?)""", (pr_id, 0, 0, 0, 0, 0))
+        hau_v_id = r_cursor.fetchone()[0]
+        r_cursor.execute("""UPDATE properties set (hau_v_id, name, type_id) = (?, ?, ?) WHERE id = ?""",
+                         (hau_v_id, rpr_name_entry.get(), 1 if property_type.get() == 'Flat' else 2, pr_id))
         red_conn.commit()
 
         red_pr.destroy()
         return refresh_cards()
 
     rpr_update_values_btn = ttk.Button(red_property_frm, text='Update values', command=update_values, style='CustomHelvetica.TButton')
-    rpr_update_values_btn.grid(column=0, columnspan=2, row=8, sticky=N, pady=(40, 0))
+    rpr_update_values_btn.grid(column=0, columnspan=2, row=12, sticky=N, pady=(40, 0))
 
     red_pr.bind("<Control-Z>", lambda e, w=red_pr: close_window(e, w))
     red_pr.bind("<Control-z>", lambda e, w=red_pr: close_window(e, w))
@@ -980,7 +981,7 @@ def new_property(_event=None):
         return refresh_cards()
 
     add_pr_btn = ttk.Button(add_property_frm, width=15, text='Add Property', style='CustomHelvetica.TButton', command=add_record)
-    add_pr_btn.grid(column=0, row=8, columnspan=3, sticky='N', padx=5, pady=20)
+    add_pr_btn.grid(column=0, row=12, columnspan=3, sticky='N', padx=5, pady=20)
 
     add_property.bind("<Control-Z>", lambda e, w=add_property: close_window(e, w))
     add_property.bind("<Control-z>", lambda e, w=add_property: close_window(e, w))
