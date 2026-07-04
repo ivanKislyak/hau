@@ -171,14 +171,49 @@ root.bind("<MouseWheel>", on_mouse_wheel)
 root.bind('<Down>', on_mouse_wheel)
 
 # Main functions
-def commas_to_dots(my_list, commas_qty=1):
+def commas_to_dots(my_list: list[str], commas_qty: int = 1) -> list:
+    """
+    Replaces commas with dots in each string from the given list.
+
+    Args:
+        my_list: List of strings where commas should be replaced.
+        commas_qty: Maximum number of commas to replace in each string.
+
+    Returns:
+        A new list with commas replaced by dots.
+    """
+
     return [item.replace(',', '.', commas_qty) for item in my_list]
 
 def close_window(_event, window):
     window.destroy()
 
 def setting_rates(entry: ttk.Entry | tk.Entry, n_btn: ttk.Button | tk.Button, n_pr_id: int, cursor: sqlite3.Cursor, entry_buttons_dict: dict, war_label) -> None:
-    """Update rate button icon depending on entered value and configured tariff"""
+    """
+    Updates the tariff settings button icon depending on the entry value
+    and the tariff saved in the database.
+
+    If the entry is empty, the button gets the default settings icon.
+    If the entry has a value and a tariff is configured, the button gets
+    the configured-rate icon.
+    If the entry has a value but no tariff is configured, the button gets
+    the warning-rate icon.
+
+    Also shows or hides the warning label depending on whether at least
+    one value entry has no configured tariff.
+
+    Args:
+        entry: Entry widget containing the current utility value.
+        n_btn: Settings button related to this entry.
+        n_pr_id: Property ID used to find the tariff row in the database.
+        cursor: SQLite cursor used to read tariff information.
+        entry_buttons_dict: Dictionary where keys are entries and values are
+            their related settings buttons.
+        war_label: Label shown when at least one value has no configured tariff.
+
+    Returns:
+        None"""
+
     ToolTip(war_label, msg='If you leave the value as “no rate,” then when the values are updated, the difference between the values will not affect the total', delay=1.0)
     cursor.execute("""SELECT * FROM tariffs WHERE pr_id = ?""", (n_pr_id,))
     text_inside = entry.get()
@@ -211,6 +246,39 @@ def setting_rates(entry: ttk.Entry | tk.Entry, n_btn: ttk.Button | tk.Button, n_
         war_label.grid_remove()
 
 def confirm_rate_info(v: StringVar, s_entry, c_frame, tariff_frm, tariff_top, n_pr_id: int, conn, cursor, value_h, up_entry: ttk.Entry | tk.Entry, up_btn, entry_buttons_dict: dict, war_label) -> None:
+    """
+    Validates and saves tariff information for the selected utility value.
+
+    Supports two tariff types:
+    - Flat: one fixed rate per unit.
+    - Tiered: multiple rate values taken from entry widgets inside c_frame.
+
+    The function checks that all required fields are filled in and contain
+    numeric values. After validation, it inserts a new tariff row or updates
+    the existing one in the database.
+
+    After saving, it refreshes the related settings button icon and closes
+    the tariff configuration window.
+
+    Args:
+        v: StringVar containing the selected tariff type.
+        s_entry: Entry widget with the flat rate value.
+        c_frame: Frame containing tiered rate entry widgets.
+        tariff_frm: Parent frame used for error message boxes.
+        tariff_top: Top-level tariff window that will be closed after saving.
+        n_pr_id: Property ID used to save the tariff for the correct property.
+        conn: SQLite connection used to commit database changes.
+        cursor: SQLite cursor used to read and write tariff information.
+        value_h: Name prefix used to build the tariff column name.
+        up_entry: Entry widget whose related settings button should be updated.
+        up_btn: Settings button that should be refreshed after saving.
+        entry_buttons_dict: Dictionary where keys are entries and values are
+            their related settings buttons.
+        war_label: Label shown when at least one value has no configured tariff.
+
+    Returns:
+        None"""
+
     insert_value = None
 
     if v.get() == 'Flat':
@@ -240,7 +308,7 @@ def confirm_rate_info(v: StringVar, s_entry, c_frame, tariff_frm, tariff_top, n_
                 messagebox.showerror('Error', 'Enter the numerical values', parent=tariff_frm)
                 return None
 
-        insert_value = separator.join(insert_value) if len(insert_value) / 2 else separator.join(insert_value[:-2])
+        insert_value = separator.join(insert_value) if len(insert_value) % 2 else separator.join(insert_value[:-2])
 
     cursor.execute("""SELECT * FROM tariffs WHERE pr_id = ?""", (n_pr_id,))
     info_ab_t = cursor.fetchall()
@@ -257,7 +325,28 @@ def confirm_rate_info(v: StringVar, s_entry, c_frame, tariff_frm, tariff_top, n_
     return tariff_top.destroy()
 
 # Loading real estate listings on the home screen
-def refresh_cards():
+def refresh_cards() -> None:
+    """
+    Refreshes the property cards on the main screen.
+
+    Removes all existing widgets from the cards container, loads properties
+    and their current utility values from the database, and rebuilds the UI
+    cards for each property.
+
+    If no properties are found, shows an empty-state message and a button
+    for adding the first property.
+
+    Side effects:
+        - Destroys and recreates widgets inside canvas_fr.
+        - Reads data from the SQLite database.
+        - Creates property cards with utility values and action buttons.
+        - Binds the Return key to the new_property function.
+        - Shows a confirmation dialog before deleting a property.
+
+    Returns:
+        None
+    """
+
     for ch in canvas_fr.winfo_children():
         ch.destroy()
     with sqlite3.connect(DB_PATH) as sql_conn:
@@ -282,13 +371,13 @@ def refresh_cards():
             with sqlite3.connect(DB_PATH) as sql_conn3:
                 cursor = sql_conn3.cursor()
                 cursor.execute("""SELECT * FROM properties""")
-                a = 2
+                card_row = 2
 
                 for properties in cursor.fetchall():
                     cursor.execute("""SELECT * FROM hau_values WHERE hau_v_id = ?""", (properties[3],))
                     hau_values = cursor.fetchall()
                     card_fr = tk.Frame(canvas_fr, relief="solid", background='white', border=1, pady=10)
-                    card_fr.grid(column=0, row=a, padx=5, pady=5)
+                    card_fr.grid(column=0, row=card_row, padx=5, pady=5)
                     card_fr.grid_columnconfigure(0, minsize=400)
                     card_fr.configure(width=400)
 
@@ -300,11 +389,11 @@ def refresh_cards():
                     type_lb = ttk.Label(card_fr, text=type_text, style='CustomHelvetica14.TLabel')
                     type_lb.grid(row=1, column=0, sticky=W, padx=(10, 0))
 
-                    pastes = ['Gas', 'Water', 'Electricity', 'Heating', 'Garbage', 'HOA fee']
+                    utility_names = ['Gas', 'Water', 'Electricity', 'Heating', 'Garbage', 'HOA fee']
                     req_values = hau_values[0][2:]
                     rcount = 2
 
-                    for name, value in zip(pastes, req_values):
+                    for name, value in zip(utility_names, req_values):
                         if value:
                             txt = f'{name}: {value}'
                             ttk.Label(card_fr, text=txt, style='CustomHelvetica14.TLabel').grid(row=rcount, column=0, sticky=W, padx=(10, 0))
@@ -332,10 +421,10 @@ def refresh_cards():
                     del_pr_btn.configure(width=2)
                     ToolTip(del_pr_btn, msg='Delete current property', delay=1.0)
 
-                    a +=1
+                    card_row +=1
 
             lets_add_btn = ttk.Button(canvas_fr, text="Add more", command=new_property, style='CustomHelvetica.TButton')
-            lets_add_btn.grid(column=0, row=a, sticky=NS, pady=10, padx=10)
+            lets_add_btn.grid(column=0, row=card_row, sticky=NS, pady=10, padx=10)
 
             for child in mainframe.winfo_children():
                 child.grid_configure(padx=5, pady=5)
