@@ -6,7 +6,7 @@ CREATE TABLE IF NOT EXISTS "hau_values" (
 	"electricity" NUMERIC,
 	"heating" NUMERIC,
 	"garbage" NUMERIC,
-	"housing_maintenance" NUMERIC,
+	"housing_main" NUMERIC,
 	"date" TEXT,
 	FOREIGN KEY("pr_id") REFERENCES "properties"("id") ON DELETE CASCADE DEFERRABLE INITIALLY DEFERRED
 );
@@ -24,7 +24,7 @@ CREATE TABLE IF NOT EXISTS "tariffs" (
 	"electricity_t" TEXT,
 	"heating_t" TEXT,
 	"garbage_t" TEXT,
-	"housing_maintenance_t" TEXT,
+	"housing_main_t" TEXT,
 	FOREIGN KEY("pr_id") REFERENCES "properties"("id") ON DELETE CASCADE DEFERRABLE INITIALLY DEFERRED
 );
 
@@ -33,6 +33,7 @@ CREATE TABLE IF NOT EXISTS "properties" (
     "name" TEXT,
     "type_id" INTEGER NOT NULL,
     "hau_v_id" INTEGER NOT NULL,
+    "payment" TEXT,
     FOREIGN KEY("type_id") REFERENCES "type"("type_id"),
     FOREIGN KEY("hau_v_id") REFERENCES "hau_values"("hau_v_id") DEFERRABLE INITIALLY DEFERRED
 );

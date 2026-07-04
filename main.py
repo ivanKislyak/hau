@@ -33,7 +33,7 @@ root = tk.Tk()
 root.title("Hau " + c_version)
 root.iconbitmap(default=str(ICONS_PATH / "hau_logo.ico"))
 root.configure(bg="white")
-root.minsize(500, 350)
+root.minsize(500, 380)
 root.columnconfigure(0, weight=1)
 root.rowconfigure(0, weight=1)
 
@@ -49,7 +49,7 @@ def resize_img(img, a, b):
 
 pencil_img = ImageTk.PhotoImage(resize_img(Image.open(ICONS_PATH / 'pencil1.png'), 20, 20))
 trash_img = ImageTk.PhotoImage(resize_img(Image.open(ICONS_PATH / 'trash.png'), 20, 20))
-house_img = ImageTk.PhotoImage(resize_img(Image.open(ICONS_PATH / 'house.png'), 20, 20))
+house_img = ImageTk.PhotoImage(resize_img(Image.open(ICONS_PATH / 'house.png'), 25, 20))
 apartment_img = ImageTk.PhotoImage(resize_img(Image.open(ICONS_PATH / 'apartment.png'), 15, 22))
 settings_img = ImageTk.PhotoImage(resize_img(Image.open(ICONS_PATH / 'settings.png'), 20, 19))
 settings_w_img = ImageTk.PhotoImage(resize_img(Image.open(ICONS_PATH / 'settings_w_r.png'), 20, 19))
@@ -125,7 +125,8 @@ needed_columns = {
     'water': 3,
     'electricity': 4,
     'heating': 5,
-    'garbage': 6
+    'garbage': 6,
+    'housing_main': 7
 }
 
 # Useful notes
@@ -299,7 +300,7 @@ def refresh_cards():
                     type_lb = ttk.Label(card_fr, text=type_text, style='CustomHelvetica14.TLabel')
                     type_lb.grid(row=1, column=0, sticky=W, padx=(10, 0))
 
-                    pastes = ['Gas', 'Water', 'Electricity', 'Heating', 'Garbage']
+                    pastes = ['Gas', 'Water', 'Electricity', 'Heating', 'Garbage', 'HOA fee']
                     req_values = hau_values[0][2:]
                     rcount = 2
 
@@ -348,7 +349,7 @@ def redact_pr(pr_id):
     r_cursor.execute("""SELECT * FROM properties WHERE id = ?""", (pr_id,))
     pr_info = r_cursor.fetchone()
 
-    r_cursor.execute("""SELECT * FROM hau_values WHERE hau_v_id = ?""", (pr_info[-1],))
+    r_cursor.execute("""SELECT * FROM hau_values WHERE hau_v_id = ?""", (pr_info[-2],))
     hau_v_info = r_cursor.fetchone()
     red_conn.commit()
 
@@ -366,7 +367,7 @@ def redact_pr(pr_id):
     red_pr.geometry(f"{rpr_width}x{rpr_height}+{rpr_x}+{rpr_y}")
 
     pr_name, pr_type = pr_info[1:3]
-    pr_gas, pr_water, pr_electro, pr_heating, pr_garbage, pr_date = hau_v_info[2:]
+    pr_gas, pr_water, pr_electro, pr_heating, pr_garbage, pr_housing_main, pr_date = hau_v_info[2:]
 
     str_var = StringVar(value=pr_name)
     str_var.set(pr_name)
@@ -595,6 +596,17 @@ def redact_pr(pr_id):
     rpr_garbage_btn.grid(column=2, row=7, sticky="e", padx=10)
     rpr_garbage_btn.image_name = 'settings_img'
 
+    rpr_housing_main_label = ttk.Label(red_property_frm, text='HOA fee', style='CustomHelvetica.TLabel')
+    rpr_housing_main_label.grid(column=0, row=8, sticky="w", padx=10)
+
+    rpr_housing_main_entry = ttk.Entry(red_property_frm, font=base14, foreground=black, background=white)
+    rpr_housing_main_entry.grid(column=1, row=8, sticky="e")
+    rpr_housing_main_entry.insert(0, pr_housing_main if pr_housing_main else '')
+
+    rpr_housing_main_btn = ttk.Button(red_property_frm, width=3, image=settings_img, command=lambda: tariff_for('housing_main', rpr_housing_main_entry, rpr_housing_main_btn))
+    rpr_housing_main_btn.grid(column=2, row=8, sticky="e", padx=10)
+    rpr_housing_main_btn.image_name = 'settings_img'
+
     # Updating rate buttons
     entry_buttons = {
         rpr_gas_entry: rpr_gas_btn,
@@ -602,6 +614,7 @@ def redact_pr(pr_id):
         rpr_electricity_entry: rpr_electricity_btn,
         rpr_heating_entry: rpr_heating_btn,
         rpr_garbage_entry: rpr_garbage_btn,
+        rpr_housing_main_entry: rpr_housing_main_btn
     }
 
     war_label = ctk.CTkLabel(
@@ -628,7 +641,7 @@ def redact_pr(pr_id):
             return messagebox.showerror('Error', 'The “Name” field is required', parent=red_property_frm)
 
         w_list = [rpr_gas_entry.get(), rpr_water_entry.get(), rpr_electricity_entry.get(), rpr_heating_entry.get(),
-                  rpr_garbage_entry.get()]
+                  rpr_garbage_entry.get(), rpr_housing_main_entry.get()]
         v_list = [v for v in w_list if v != '']
 
         for v in commas_to_dots(v_list):
@@ -645,7 +658,7 @@ def redact_pr(pr_id):
                 new_values.append(0)
 
         # Updating Values
-        r_cursor.execute("""SELECT gas, water, electricity, heating, garbage FROM hau_values WHERE pr_id = ? ORDER BY hau_v_id DESC""", (pr_id,))
+        r_cursor.execute("""SELECT gas, water, electricity, heating, garbage, housing_main FROM hau_values WHERE pr_id = ? ORDER BY hau_v_id DESC""", (pr_id,))
 
         prev_values = []
         for v in r_cursor.fetchone():
@@ -660,7 +673,7 @@ def redact_pr(pr_id):
             if nv < pv:
                 return messagebox.showerror('Error', 'The new values must be greater than or equal to the previous ones', parent=red_property_frm)
 
-        r_cursor.execute("""INSERT INTO hau_values (pr_id, gas, water, electricity, heating, garbage, date) VALUES (?, ?, ?, ?, ?, ?, ?)""",
+        r_cursor.execute("""INSERT INTO hau_values (pr_id, gas, water, electricity, heating, garbage, housing_main, date) VALUES (?, ?, ?, ?, ?, ?, ?, ?)""",
                          (pr_id, *new_values, str(date.today())))
         red_conn.commit()
 
@@ -686,7 +699,7 @@ def new_property(_event=None):
     add_property.focus_force()
     add_property.title("Hau " + c_version + ' - adding property')
     add_property.configure(bg="white")
-    add_property.minsize(200, 200)
+    add_property.minsize(200, 450)
     add_property.columnconfigure(0, weight=1)
 
     pr_width, pr_height = 400, 400
@@ -871,7 +884,6 @@ def new_property(_event=None):
 
     pr_gas_entry = ttk.Entry(add_property_frm, font=base14, foreground=black, background=white)
     pr_gas_entry.grid(column=1, row=3, sticky="e")
-    pr_gas_entry.focus_force()
 
     pr_gas_btn = ttk.Button(add_property_frm, width=3, image=settings_img, command=lambda: tariff_for('gas', pr_gas_entry, pr_gas_btn))
     pr_gas_btn.grid(column=2, row=3, sticky="e", padx=10)
@@ -917,6 +929,16 @@ def new_property(_event=None):
     pr_garbage_btn.grid(column=2, row=7, sticky="e", padx=10)
     pr_garbage_btn.image_name = 'settings_img'
 
+    pr_housing_main_label = ttk.Label(add_property_frm, text='HOA fee', style='CustomHelvetica.TLabel')
+    pr_housing_main_label.grid(column=0, row=8, sticky="w", padx=10)
+
+    pr_housing_main_entry = ttk.Entry(add_property_frm, font=base14, foreground=black, background=white)
+    pr_housing_main_entry.grid(column=1, row=8, sticky="e")
+
+    pr_housing_main_btn = ttk.Button(add_property_frm, width=3, image=settings_img, command=lambda: tariff_for('housing_main', pr_housing_main_entry, pr_housing_main_btn))
+    pr_housing_main_btn.grid(column=2, row=8, sticky="e", padx=10)
+    pr_housing_main_btn.image_name = 'settings_img'
+
     # Updating rate buttons
     entry_buttons = {
         pr_gas_entry: pr_gas_btn,
@@ -924,6 +946,7 @@ def new_property(_event=None):
         pr_electricity_entry: pr_electricity_btn,
         pr_heating_entry: pr_heating_btn,
         pr_garbage_entry: pr_garbage_btn,
+        pr_housing_main_entry: pr_housing_main_btn
     }
 
     war_label = ctk.CTkLabel(
@@ -950,7 +973,7 @@ def new_property(_event=None):
             return messagebox.showerror('Error', 'The “Name” field is required', parent=add_property_frm)
 
         w_list = [pr_gas_entry.get(), pr_water_entry.get(), pr_electricity_entry.get(), pr_heating_entry.get(),
-                  pr_garbage_entry.get()]
+                  pr_garbage_entry.get(), pr_housing_main_entry.get()]
         v_list = [v for v in w_list if v != '']
 
         for v in commas_to_dots(v_list):
@@ -962,7 +985,7 @@ def new_property(_event=None):
         # Adding Values
         with sqlite3.connect(DB_PATH) as add_sql_conn:
             add_cursor = add_sql_conn.cursor()
-            add_cursor.execute("""INSERT INTO hau_values (gas, water, electricity, heating, garbage, date, pr_id) VALUES (?, ?, ?, ?, ?, ?, ?)""",
+            add_cursor.execute("""INSERT INTO hau_values (gas, water, electricity, heating, garbage, housing_main, date, pr_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?)""",
                                (*commas_to_dots(w_list), str(date.today()), next_pr_id))
 
         def lat_hau_id() -> int:
