@@ -26,7 +26,7 @@ def db():
             cursor.executescript(sql_script.read())
 
 # Current version
-c_version = '(0.3)'
+c_version = '(0.4)'
 
 # App
 root = tk.Tk()
@@ -37,7 +37,7 @@ root.minsize(500, 380)
 root.columnconfigure(0, weight=1)
 root.rowconfigure(0, weight=1)
 
-width, height = 500, 300
+width, height = 600, 300
 screen_width = root.winfo_screenwidth()
 screen_height = root.winfo_screenheight()
 x = (screen_width - width) // 2
@@ -171,6 +171,11 @@ root.bind("<MouseWheel>", on_mouse_wheel)
 root.bind('<Down>', on_mouse_wheel)
 
 # Main functions
+def to_number(value):
+    if value in ('', None):
+        return 0
+    return float(value)
+
 def commas_to_dots(my_list: list[str], commas_qty: int = 1) -> list:
     """
     Replaces commas with dots in each string from the given list.
@@ -403,8 +408,30 @@ def refresh_cards() -> None:
                     res = f'Last update: {cursor.fetchone()[-1]}'
                     Label(card_fr, text=res, bg=white, fg='grey').grid(row=rcount, column=0, sticky=W, padx=(10, 0), pady=(15, 0))
 
-                    calc_res = Label(card_fr, text='', bg=white, fg='green', font=base14)
-                    calc_res.grid(row=rcount, column=2, sticky=E, padx=(0, 10), pady=(15, 0))
+                    cursor.execute("""SELECT * FROM tariffs WHERE pr_id = ?""",
+                                   (properties[0],))
+                    tariffs = cursor.fetchone()[2:]
+                    cursor.execute("""SELECT * FROM hau_values WHERE pr_id = ? ORDER BY hau_v_id DESC""",
+                                   (properties[0],))
+                    values = cursor.fetchall()
+                    current_values = values[0][2:8]
+
+                    try:
+                        prev_values = values[1][2:8]
+                    except IndexError:
+                        prev_values = (0, 0, 0, 0, 0, 0)
+
+                    calc_res = 0
+
+                    for cv, pv, t in zip(current_values, prev_values, tariffs):
+                        cv = to_number(cv)
+                        pv = to_number(pv)
+                        t = to_number(t)
+
+                        calc_res += ((cv if pv else 0) - pv) * t
+
+                    calc_res_lbl = Label(card_fr, text=f'Payment: {calc_res}' if calc_res else None, bg=white, fg='green', font=base14)
+                    calc_res_lbl.grid(row=rcount, column=2, sticky=E, padx=(0, 10), pady=(15, 0))
 
                     def del_pr(pr_id):
                         am = messagebox.askquestion('Are you sure?', 'Are you sure for deleting?')
