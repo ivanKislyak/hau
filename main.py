@@ -33,7 +33,7 @@ root = tk.Tk()
 root.title("Hau " + c_version)
 root.iconbitmap(default=str(ICONS_PATH / "hau_logo.ico"))
 root.configure(bg="white")
-root.minsize(500, 380)
+root.minsize(460, 380)
 root.columnconfigure(0, weight=1)
 root.rowconfigure(0, weight=1)
 
@@ -172,6 +172,8 @@ root.bind('<Down>', on_mouse_wheel)
 
 # Main functions
 def to_number(value):
+    if type(value) is str and separator in value:
+        return value.split(separator)
     if value in ('', None):
         return 0
     return float(value)
@@ -313,7 +315,7 @@ def confirm_rate_info(v: StringVar, s_entry, c_frame, tariff_frm, tariff_top, n_
                 messagebox.showerror('Error', 'Enter the numerical values', parent=tariff_frm)
                 return None
 
-        insert_value = separator.join(insert_value) if len(insert_value) % 2 else separator.join(insert_value[:-2])
+        insert_value = separator.join(insert_value)
 
     cursor.execute("""SELECT * FROM tariffs WHERE pr_id = ?""", (n_pr_id,))
     info_ab_t = cursor.fetchall()
@@ -408,42 +410,59 @@ def refresh_cards() -> None:
                     res = f'Last update: {cursor.fetchone()[-1]}'
                     Label(card_fr, text=res, bg=white, fg='grey').grid(row=rcount, column=0, sticky=W, padx=(10, 0), pady=(15, 0))
 
-                    cursor.execute("""SELECT * FROM tariffs WHERE pr_id = ?""",
-                                   (properties[0],))
-                    tariffs = cursor.fetchone()[2:]
-                    cursor.execute("""SELECT * FROM hau_values WHERE pr_id = ? ORDER BY hau_v_id DESC""",
-                                   (properties[0],))
-                    values = cursor.fetchall()
-                    current_values = values[0][2:8]
+                    if not properties[4]:
+                        cursor.execute("""SELECT * FROM tariffs WHERE pr_id = ?""",
+                                       (properties[0],))
+                        tariffs = cursor.fetchone()[2:]
+                        cursor.execute("""SELECT * FROM hau_values WHERE pr_id = ? ORDER BY hau_v_id DESC""",
+                                       (properties[0],))
+                        values = cursor.fetchall()
+                        current_values = values[0][2:8]
 
-                    try:
-                        prev_values = values[1][2:8]
-                    except IndexError:
-                        prev_values = (0, 0, 0, 0, 0, 0)
+                        try:
+                            prev_values = values[1][2:8]
+                        except IndexError:
+                            prev_values = (0, 0, 0, 0, 0, 0)
 
-                    calc_res = 0
+                        calc_res = 0
+                        res = 0
 
-                    for cv, pv, t in zip(current_values, prev_values, tariffs):
-                        cv = to_number(cv)
-                        pv = to_number(pv)
-                        t = to_number(t)
+                        for cv, pv, t in zip(current_values, prev_values, tariffs):
+                            cv = to_number(cv)
+                            pv = to_number(pv)
+                            t = to_number(t)
 
-                        calc_res += ((cv if pv else 0) - pv) * t
+                            if type(t) is float or type(t) is int:
+                                calc_res += ((cv if pv else 0) - pv) * t
+                            else:
+                                calc_res += ((cv if pv else 0) - pv)
+                                len_t = len(t)
 
-                    calc_res_lbl = Label(card_fr, text=f'Payment: {calc_res}' if calc_res else None, bg=white, fg='green', font=base14)
-                    calc_res_lbl.grid(row=rcount, column=2, sticky=E, padx=(0, 10), pady=(15, 0))
+                                for i, v in enumerate(t):
+                                    v = to_number(v)
+                                    if i % 2 == 0 and i <= len_t-1:
+                                        if calc_res > v:
+                                            calc_res -= v
+                                            res += v * to_number(t[i+1])
+                                        elif calc_res > 0:
+                                            res += calc_res * to_number(t[i + 1])
+                                            calc_res -= v
+                                calc_res = res
+
+                        calc_res_lbl = Label(card_fr, text=f'Payment: {calc_res}' if calc_res else None, bg=white, fg='green', font=base14)
+                        calc_res_lbl.grid(row=rcount, column=2, sticky=E, padx=(0, 10), pady=(15, 0))
 
                     def del_pr(pr_id):
                         am = messagebox.askquestion('Are you sure?', 'Are you sure for deleting?')
                         if am == 'yes':
                             yes_del(pr_id)
 
-                    new_hau_v = ttk.Button(card_fr, style='CustomHelvetica.TButton', command=lambda v=properties[0]: redact_pr(v), image=pencil_img, compound="center")
+                    new_hau_v = ttk.Button(card_fr, style='CustomHelvetica.TButton', command=lambda vp=properties[0]: redact_pr(vp), image=pencil_img, compound="center")
                     new_hau_v.grid(column=2, row=(rcount // 2)-1, sticky='e', padx=(0, 20))
                     new_hau_v.configure(width=2)
                     ToolTip(new_hau_v, msg='Update current values', delay=1.0)
 
-                    del_pr_btn = ttk.Button(card_fr, style='CustomHelvetica.TButton', command=lambda v=properties[0]: del_pr(v), image=trash_img)
+                    del_pr_btn = ttk.Button(card_fr, style='CustomHelvetica.TButton', command=lambda vp=properties[0]: del_pr(vp), image=trash_img)
                     del_pr_btn.grid(column=2, row=(rcount // 2)+1, sticky='e', padx=(0, 20))
                     del_pr_btn.configure(width=2)
                     ToolTip(del_pr_btn, msg='Delete current property', delay=1.0)
@@ -777,10 +796,13 @@ def redact_pr(pr_id):
         r_cursor.execute("""SELECT gas, water, electricity, heating, garbage, housing_main FROM hau_values WHERE pr_id = ? ORDER BY hau_v_id DESC""", (pr_id,))
 
         prev_values = []
+
         for v in r_cursor.fetchone():
             try:
                 prev_values.append(float(v))
             except ValueError:
+                prev_values.append(0)
+            except TypeError:
                 prev_values.append(0)
 
         red_conn.commit()

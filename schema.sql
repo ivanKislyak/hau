@@ -33,7 +33,7 @@ CREATE TABLE IF NOT EXISTS "properties" (
     "name" TEXT,
     "type_id" INTEGER NOT NULL,
     "hau_v_id" INTEGER NOT NULL,
-    "payment" TEXT,
+    "payment" INTEGER,
     FOREIGN KEY("type_id") REFERENCES "type"("type_id"),
     FOREIGN KEY("hau_v_id") REFERENCES "hau_values"("hau_v_id") DEFERRABLE INITIALLY DEFERRED
 );
