@@ -54,6 +54,8 @@ apartment_img = ImageTk.PhotoImage(resize_img(Image.open(ICONS_PATH / 'apartment
 settings_img = ImageTk.PhotoImage(resize_img(Image.open(ICONS_PATH / 'settings.png'), 20, 19))
 settings_w_img = ImageTk.PhotoImage(resize_img(Image.open(ICONS_PATH / 'settings_w_r.png'), 20, 19))
 settings_wt_img = ImageTk.PhotoImage(resize_img(Image.open(ICONS_PATH / 'settings_wt_r.png'), 20, 19))
+infinity_img = ImageTk.PhotoImage(resize_img(Image.open(ICONS_PATH / 'infinity.png'), 22, 13))
+return_img = ImageTk.PhotoImage(resize_img(Image.open(ICONS_PATH / 'return.png'), 20, 20))
 
 # Colors
 dp_sea = '#11384D'
@@ -645,6 +647,10 @@ def redact_pr(pr_id):
                     vs.set('Tiered')
 
                     separated_values = result_get_v[needed_columns[value_h]].split(separator)
+
+                    while len([w for w in c_frame.winfo_children() if isinstance(w, ttk.Entry)]) < len(separated_values):
+                        add_more(c_btn, confirm_rate_btn)
+
                     entries = [w for w in c_frame.winfo_children() if isinstance(w, ttk.Entry)]
 
                     for widget, separated_value in zip(entries, separated_values):
@@ -883,47 +889,66 @@ def new_property(_event=None):
         c_frame.grid(row=3, columnspan=5)
 
         c_lbl = tk.Label(c_frame, text='First', bg=white, fg=black, font=base14)
-        c_lbl.grid(row=0, column=0, padx=5, pady=5)
+        c_lbl.grid(row=0, column=1, padx=5, pady=5)
 
         c_entry = ttk.Entry(c_frame, font=base14, foreground=black, background=white, width=3)
-        c_entry.grid(row=0, column=1)
+        c_entry.grid(row=0, column=2)
 
         c2_lbl = tk.Label(c_frame, text='units cost: ', bg=white, fg=black, font=base14)
-        c2_lbl.grid(row=0, column=2, padx=5, pady=5)
+        c2_lbl.grid(row=0, column=3, padx=5, pady=5)
 
         c2_entry = ttk.Entry(c_frame, font=base14, foreground=black, background=white, width=3)
-        c2_entry.grid(row=0, column=3)
+        c2_entry.grid(row=0, column=4)
 
         c3_lbl = tk.Label(c_frame, text='Next', bg=white, fg=black, font=base14)
-        c3_lbl.grid(row=1, column=0, padx=5, pady=5)
+        c3_lbl.grid(row=1, column=1, padx=5, pady=5)
 
         c3_entry = ttk.Entry(c_frame, font=base14, foreground=black, background=white, width=3)
-        c3_entry.grid(row=1, column=1)
+        c3_entry.grid(row=1, column=2)
 
         c4_lbl = tk.Label(c_frame, text='units cost: ', bg=white, fg=black, font=base14)
-        c4_lbl.grid(row=1, column=2, padx=5, pady=5)
+        c4_lbl.grid(row=1, column=3, padx=5, pady=5)
 
         c4_entry = ttk.Entry(c_frame, font=base14, foreground=black, background=white, width=3)
-        c4_entry.grid(row=1, column=3)
+        c4_entry.grid(row=1, column=4)
 
         cursor.execute("""SELECT * FROM tariffs WHERE pr_id = ?""", (next_pr_id,))
         result_get_v = cursor.fetchone()
 
         row_t = 2
 
+        def rest_counting(btn):
+            if not getattr(btn, "is_infinite", False):
+                print(row_t)
+                btn.configure(image=return_img)
+                setattr(btn, "is_infinite", True)
+            else:
+                btn.configure(image=infinity_img)
+                setattr(btn, "is_infinite", False)
+                print("я уже красный")
+
+        infinity_btn = ttk.Button(c_frame, image=infinity_img, style='CustomHelvetica.TButton')
+        setattr(infinity_btn, "is_infinite", False)
+        infinity_btn.configure(command=lambda: rest_counting(infinity_btn))
+
+        ToolTip(infinity_btn, msg='Use this rate for all units above the previous tiers', delay=1.0)
+
+        def del_cur(r):
+            nonlocal row_t
+            for ch in c_frame.winfo_children():
+                if ch.grid_info()['row'] == r:
+                    ch.destroy()
+            row_t -= 1
+
         def add_more(btn, confirm_rb):
             nonlocal row_t
-            tk.Label(c_frame, text='Next', bg=white, fg=black, font=base14).grid(row=row_t, column=0, padx=5, pady=5)
-            ttk.Entry(c_frame, font=base14, foreground=black, background=white, width=3).grid(row=row_t, column=1)
-            tk.Label(c_frame, text='units cost: ', bg=white, fg=black, font=base14).grid(row=row_t, column=2, padx=5, pady=5)
-            ttk.Entry(c_frame, font=base14, foreground=black, background=white, width=3).grid(row=row_t, column=3)
+            infinity_btn.grid(row=row_t, column=0, padx=5, pady=5)
+            tk.Label(c_frame, text='Next', bg=white, fg=black, font=base14).grid(row=row_t, column=1, padx=5, pady=5)
+            ttk.Entry(c_frame, font=base14, foreground=black, background=white, width=3).grid(row=row_t, column=2)
+            tk.Label(c_frame, text='units cost: ', bg=white, fg=black, font=base14).grid(row=row_t, column=3, padx=5, pady=5)
+            ttk.Entry(c_frame, font=base14, foreground=black, background=white, width=3).grid(row=row_t, column=4)
 
-            def del_cur(r):
-                for ch in c_frame.winfo_children():
-                    if ch.grid_info()['row'] == r:
-                        ch.destroy()
-
-            ttk.Button(c_frame, text='X', style='CustomHelvetica.TButton', width=2, command=lambda r=row_t: del_cur(r)).grid(row=row_t, column=4, padx=5, pady=5)
+            ttk.Button(c_frame, text='X', style='CustomHelvetica.TButton', width=2, command=lambda r=row_t: del_cur(r)).grid(row=row_t, column=5, padx=5, pady=5)
 
             btn.grid(row=row_t+2)
             confirm_rb.grid(row=row_t+3)
@@ -935,10 +960,10 @@ def new_property(_event=None):
 
         confirm_rate_btn = ttk.Button(tariff_frm, style='CustomHelvetica.TButton', text='Confirm rate info',
                                       command=lambda v=vs: confirm_rate_info(v, s_entry, c_frame, tariff_frm, tariff_top, next_pr_id, conn, cursor, value_h, up_entry, up_btn, entry_buttons, war_label))
-        confirm_rate_btn.grid(row=5, column=0, columnspan=3, sticky='ew', pady=(10, 5), padx=5)
+        confirm_rate_btn.grid(row=5, column=0, columnspan=4, sticky='ew', pady=(10, 5), padx=5)
 
         c_btn = ttk.Button(c_frame, style='CustomHelvetica.TButton', text='Add more')
-        c_btn.grid(row=row_t, column=0, columnspan=4, sticky='ew', pady=(10, 5))
+        c_btn.grid(row=row_t, column=1, columnspan=4, sticky='ew', pady=(10, 5))
         c_btn.configure(command=lambda b=c_btn, c=confirm_rate_btn: add_more(b, c))
 
         def flat_or_tiered(v):
