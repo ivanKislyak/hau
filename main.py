@@ -919,13 +919,11 @@ def new_property(_event=None):
 
         def rest_counting(btn):
             if not getattr(btn, "is_infinite", False):
-                print(row_t)
                 btn.configure(image=return_img)
                 setattr(btn, "is_infinite", True)
             else:
                 btn.configure(image=infinity_img)
                 setattr(btn, "is_infinite", False)
-                print("я уже красный")
 
         infinity_btn = ttk.Button(c_frame, image=infinity_img, style='CustomHelvetica.TButton')
         setattr(infinity_btn, "is_infinite", False)
@@ -933,27 +931,55 @@ def new_property(_event=None):
 
         ToolTip(infinity_btn, msg='Use this rate for all units above the previous tiers', delay=1.0)
 
-        def del_cur(r):
+        def del_cur(del_btn):
             nonlocal row_t
-            for ch in c_frame.winfo_children():
-                if ch.grid_info()['row'] == r:
-                    ch.destroy()
+
+            r = int(del_btn.grid_info()['row'])
+
+            for ch in list(c_frame.winfo_children()):
+                info_grid = ch.grid_info()
+
+                if not info_grid:
+                    continue
+
+                row_grid = int(info_grid['row'])
+
+                if row_grid == r:
+                    if ch is infinity_btn:
+                        ch.grid_forget()
+                    elif ch is c_btn:
+                        continue
+                    else:
+                        ch.destroy()
+                elif row_grid > r:
+                    ch.grid_configure(row = row_grid - 1)
+
             row_t -= 1
 
-        def add_more(btn, confirm_rb):
+            c_btn.grid_configure(row=row_t)
+
+            if row_t > 2:
+                infinity_btn.grid(row=row_t - 1, column=0, padx=5, pady=5)
+            else:
+                infinity_btn.grid_forget()
+
+        def add_more(btn):
             nonlocal row_t
-            infinity_btn.grid(row=row_t, column=0, padx=5, pady=5)
-            tk.Label(c_frame, text='Next', bg=white, fg=black, font=base14).grid(row=row_t, column=1, padx=5, pady=5)
-            ttk.Entry(c_frame, font=base14, foreground=black, background=white, width=3).grid(row=row_t, column=2)
-            tk.Label(c_frame, text='units cost: ', bg=white, fg=black, font=base14).grid(row=row_t, column=3, padx=5, pady=5)
-            ttk.Entry(c_frame, font=base14, foreground=black, background=white, width=3).grid(row=row_t, column=4)
 
-            ttk.Button(c_frame, text='X', style='CustomHelvetica.TButton', width=2, command=lambda r=row_t: del_cur(r)).grid(row=row_t, column=5, padx=5, pady=5)
+            cur_row = row_t
 
-            btn.grid(row=row_t+2)
-            confirm_rb.grid(row=row_t+3)
+            infinity_btn.grid(row=cur_row, column=0, padx=5, pady=5)
+            tk.Label(c_frame, text='Next', bg=white, fg=black, font=base14).grid(row=cur_row, column=1, padx=5, pady=5)
+            ttk.Entry(c_frame, font=base14, foreground=black, background=white, width=3).grid(row=cur_row, column=2)
+            tk.Label(c_frame, text='units cost: ', bg=white, fg=black, font=base14).grid(row=cur_row, column=3, padx=5, pady=5)
+            ttk.Entry(c_frame, font=base14, foreground=black, background=white, width=3).grid(row=cur_row, column=4)
+
+            del_btn = ttk.Button(c_frame, text='X', style='CustomHelvetica.TButton', width=2)
+            del_btn.configure(command=lambda b=del_btn: del_cur(b))
+            del_btn.grid(row=cur_row, column=5, padx=5, pady=5)
 
             row_t += 1
+            btn.grid_configure(row=row_t)
 
         vs = StringVar()
         vs.set('Flat')
@@ -964,7 +990,7 @@ def new_property(_event=None):
 
         c_btn = ttk.Button(c_frame, style='CustomHelvetica.TButton', text='Add more')
         c_btn.grid(row=row_t, column=1, columnspan=4, sticky='ew', pady=(10, 5))
-        c_btn.configure(command=lambda b=c_btn, c=confirm_rate_btn: add_more(b, c))
+        c_btn.configure(command=lambda b=c_btn: add_more(b))
 
         def flat_or_tiered(v):
             value = v.get()
