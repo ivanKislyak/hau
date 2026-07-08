@@ -333,6 +333,42 @@ def confirm_rate_info(v: StringVar, s_entry, c_frame, tariff_frm, tariff_top, n_
     setting_rates(up_entry, up_btn, n_pr_id, cursor, entry_buttons_dict, war_label)
     return tariff_top.destroy()
 
+def rest_counting(btn, cc_frame):
+    btn_row = btn.grid_info().get('row')
+
+    if not getattr(btn, "is_infinite", False):
+        btn.configure(image=return_img)
+        setattr(btn, "is_infinite", True)
+
+        for ch in cc_frame.winfo_children():
+            info = ch.grid_info()
+
+            if info.get('row') == btn_row:
+                if isinstance(ch, (tk.Label, ttk.Label)) and ch.cget('text') == 'Next':
+                    ch.config(text='')
+
+                if isinstance(ch, ttk.Entry) and info.get('column') == 2:
+                    ch.delete(0, tk.END)
+                    ch.grid(column=1, columnspan=2)
+                    ch.configure(width=9)
+                    ch.insert(0, 'Remaining')
+
+    else:
+        btn.configure(image=infinity_img)
+        setattr(btn, "is_infinite", False)
+
+        for ch in cc_frame.winfo_children():
+            info = ch.grid_info()
+
+            if info.get('row') == btn_row:
+                if isinstance(ch, (tk.Label, ttk.Label)) and ch.cget('text') == '':
+                    ch.config(text='Next')
+
+                if isinstance(ch, ttk.Entry) and info.get('column') == 1:
+                    ch.delete(0, tk.END)
+                    ch.grid(column=2, columnspan=1)
+                    ch.configure(width=3)
+
 # Loading real estate listings on the home screen
 def refresh_cards() -> None:
     """
@@ -568,17 +604,9 @@ def redact_pr(pr_id):
 
         row_t = 2
 
-        def rest_counting(btn):
-            if not getattr(btn, "is_infinite", False):
-                btn.configure(image=return_img)
-                setattr(btn, "is_infinite", True)
-            else:
-                btn.configure(image=infinity_img)
-                setattr(btn, "is_infinite", False)
-
         infinity_btn = ttk.Button(c_frame, image=infinity_img, style='CustomHelvetica.TButton')
         setattr(infinity_btn, "is_infinite", False)
-        infinity_btn.configure(command=lambda: rest_counting(infinity_btn))
+        infinity_btn.configure(command=lambda: rest_counting(infinity_btn, c_frame))
 
         ToolTip(infinity_btn, msg='Use this rate for all units above the previous tiers', delay=1.0)
 
@@ -963,17 +991,11 @@ def new_property(_event=None):
 
         row_t = 2
 
-        def rest_counting(btn):
-            if not getattr(btn, "is_infinite", False):
-                btn.configure(image=return_img)
-                setattr(btn, "is_infinite", True)
-            else:
-                btn.configure(image=infinity_img)
-                setattr(btn, "is_infinite", False)
+
 
         infinity_btn = ttk.Button(c_frame, image=infinity_img, style='CustomHelvetica.TButton')
         setattr(infinity_btn, "is_infinite", False)
-        infinity_btn.configure(command=lambda: rest_counting(infinity_btn))
+        infinity_btn.configure(command=lambda: rest_counting(infinity_btn, c_frame))
 
         ToolTip(infinity_btn, msg='Use this rate for all units above the previous tiers', delay=1.0)
 
