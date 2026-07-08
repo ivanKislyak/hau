@@ -539,56 +539,107 @@ def redact_pr(pr_id):
         c_frame.grid(row=3, columnspan=5)
 
         c_lbl = tk.Label(c_frame, text='First', bg=white, fg=black, font=base14)
-        c_lbl.grid(row=0, column=0, padx=5, pady=5)
+        c_lbl.grid(row=0, column=1, padx=5, pady=5)
 
         c_entry = ttk.Entry(c_frame, font=base14, foreground=black, background=white, width=3)
-        c_entry.grid(row=0, column=1)
+        c_entry.grid(row=0, column=2)
 
         c2_lbl = tk.Label(c_frame, text='units cost: ', bg=white, fg=black, font=base14)
-        c2_lbl.grid(row=0, column=2, padx=5, pady=5)
+        c2_lbl.grid(row=0, column=3, padx=5, pady=5)
 
         c2_entry = ttk.Entry(c_frame, font=base14, foreground=black, background=white, width=3)
-        c2_entry.grid(row=0, column=3)
+        c2_entry.grid(row=0, column=4)
 
         c3_lbl = tk.Label(c_frame, text='Next', bg=white, fg=black, font=base14)
-        c3_lbl.grid(row=1, column=0, padx=5, pady=5)
+        c3_lbl.grid(row=1, column=1, padx=5, pady=5)
 
         c3_entry = ttk.Entry(c_frame, font=base14, foreground=black, background=white, width=3)
-        c3_entry.grid(row=1, column=1)
+        c3_entry.grid(row=1, column=2)
 
         c4_lbl = tk.Label(c_frame, text='units cost: ', bg=white, fg=black, font=base14)
-        c4_lbl.grid(row=1, column=2, padx=5, pady=5)
+        c4_lbl.grid(row=1, column=3, padx=5, pady=5)
 
         c4_entry = ttk.Entry(c_frame, font=base14, foreground=black, background=white, width=3)
-        c4_entry.grid(row=1, column=3)
+        c4_entry.grid(row=1, column=4)
 
         r_cursor.execute("""SELECT * FROM tariffs WHERE pr_id = ?""", (pr_id,))
         result_get_v = r_cursor.fetchone()
         red_conn.commit()
 
+        row_t = 2
+
+        def rest_counting(btn):
+            if not getattr(btn, "is_infinite", False):
+                btn.configure(image=return_img)
+                setattr(btn, "is_infinite", True)
+            else:
+                btn.configure(image=infinity_img)
+                setattr(btn, "is_infinite", False)
+
+        infinity_btn = ttk.Button(c_frame, image=infinity_img, style='CustomHelvetica.TButton')
+        setattr(infinity_btn, "is_infinite", False)
+        infinity_btn.configure(command=lambda: rest_counting(infinity_btn))
+
+        ToolTip(infinity_btn, msg='Use this rate for all units above the previous tiers', delay=1.0)
+
+        def del_cur(del_btn):
+            nonlocal row_t
+            r = int(del_btn.grid_info()['row'])
+
+            for ch in list(c_frame.winfo_children()):
+                info_grid = ch.grid_info()
+
+                if not info_grid:
+                    continue
+
+                row_grid = int(info_grid['row'])
+
+                if row_grid == r:
+                    if ch is infinity_btn:
+                        ch.grid_forget()
+                    elif ch is c_btn:
+                        continue
+                    else:
+                        ch.destroy()
+                elif row_grid > r:
+                    ch.grid_configure(row=row_grid - 1)
+
+            row_t -= 1
+
+            c_btn.grid_configure(row=row_t)
+
+            if row_t > 2:
+                infinity_btn.grid(row=row_t - 1, column=0, padx=5, pady=5)
+            else:
+                infinity_btn.grid_forget()
+
+        def add_more(btn):
+            nonlocal row_t
+            cur_row = row_t
+
+            infinity_btn.grid(row=cur_row, column=0, padx=5, pady=5)
+            tk.Label(c_frame, text='Next', bg=white, fg=black, font=base14).grid(row=cur_row, column=1, padx=5, pady=5)
+            ttk.Entry(c_frame, font=base14, foreground=black, background=white, width=3).grid(row=cur_row, column=2)
+            tk.Label(c_frame, text='units cost: ', bg=white, fg=black, font=base14).grid(row=cur_row, column=3, padx=5, pady=5)
+            ttk.Entry(c_frame, font=base14, foreground=black, background=white, width=3).grid(row=cur_row, column=4)
+
+            del_btn = ttk.Button(c_frame, text='X', style='CustomHelvetica.TButton', width=2)
+            del_btn.configure(command=lambda b=del_btn: del_cur(b))
+            del_btn.grid(row=cur_row, column=5, padx=5, pady=5)
+
+            row_t += 1
+            btn.grid_configure(row=row_t)
+
         vs = StringVar()
         vs.set('Flat')
 
-        row_t = 2
+        confirm_rate_btn = ttk.Button(tariff_frm, style='CustomHelvetica.TButton', text='Confirm rate info',
+                                      command=lambda v=vs: confirm_rate_info(v, s_entry, c_frame, tariff_frm, r_tariff_top, pr_id, red_conn, r_cursor, value_h, up_entry, up_btn, entry_buttons, war_label))
+        confirm_rate_btn.grid(row=5, column=0, columnspan=3, sticky='ew', pady=(10, 5), padx=5)
 
-        def add_more(btn, confirm_rb):
-            nonlocal row_t
-            tk.Label(c_frame, text='Next', bg=white, fg=black, font=base14).grid(row=row_t, column=0, padx=5, pady=5)
-            ttk.Entry(c_frame, font=base14, foreground=black, background=white, width=3).grid(row=row_t, column=1)
-            tk.Label(c_frame, text='units cost: ', bg=white, fg=black, font=base14).grid(row=row_t, column=2, padx=5, pady=5)
-            ttk.Entry(c_frame, font=base14, foreground=black, background=white, width=3).grid(row=row_t, column=3)
-
-            def del_cur(r):
-                for ch in c_frame.winfo_children():
-                    if ch.grid_info()['row'] == r:
-                        ch.destroy()
-
-            ttk.Button(c_frame, text='X', style='CustomHelvetica.TButton', width=2, command=lambda r=row_t: del_cur(r)).grid(row=row_t, column=4, padx=5, pady=5)
-
-            btn.grid(row=row_t+2)
-            confirm_rb.grid(row=row_t+3)
-
-            row_t += 1
+        c_btn = ttk.Button(c_frame, style='CustomHelvetica.TButton', text='Add more')
+        c_btn.grid(row=row_t, column=1, columnspan=4, sticky='ew', pady=(10, 5))
+        c_btn.configure(command=lambda b=c_btn: add_more(b))
 
         def flat_or_tiered(v):
             value = v.get()
@@ -617,14 +668,6 @@ def redact_pr(pr_id):
                     except KeyError:
                         pass
 
-        confirm_rate_btn = ttk.Button(tariff_frm, style='CustomHelvetica.TButton', text='Confirm rate info',
-                                      command=lambda v=vs: confirm_rate_info(v, s_entry, c_frame, tariff_frm, r_tariff_top, pr_id, red_conn, r_cursor, value_h, up_entry, up_btn, entry_buttons, war_label))
-        confirm_rate_btn.grid(row=5, column=0, columnspan=3, sticky='ew', pady=(10, 5), padx=5)
-
-        c_btn = ttk.Button(c_frame, style='CustomHelvetica.TButton', text='Add more')
-        c_btn.grid(row=row_t, column=0, columnspan=4, sticky='ew', pady=(10, 5))
-        c_btn.configure(command=lambda b=c_btn, c=confirm_rate_btn: add_more(b, c))
-
         flat_rate = ttk.Radiobutton(tariff_frm, text='Flat rate', style='CustomHelvetica.TRadiobutton', variable=vs, value='Flat', command=lambda v=vs: flat_or_tiered(v))
         flat_rate.grid(column=0, row=0, padx=5, pady=5, sticky='w')
 
@@ -649,9 +692,12 @@ def redact_pr(pr_id):
                     separated_values = result_get_v[needed_columns[value_h]].split(separator)
 
                     while len([w for w in c_frame.winfo_children() if isinstance(w, ttk.Entry)]) < len(separated_values):
-                        add_more(c_btn, confirm_rate_btn)
+                        add_more(c_btn)
 
-                    entries = [w for w in c_frame.winfo_children() if isinstance(w, ttk.Entry)]
+                    entries = sorted(
+                        [w for w in c_frame.winfo_children() if isinstance(w, ttk.Entry)],
+                        key=lambda w: (int(w.grid_info()['row']), int(w.grid_info()['column']))
+                    )
 
                     for widget, separated_value in zip(entries, separated_values):
                         widget.insert(0, separated_value)
