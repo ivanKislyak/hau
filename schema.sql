@@ -1,3 +1,9 @@
+CREATE TABLE IF NOT EXISTS "user_settings" (
+    "name" TEXT,
+    "language" TEXT,
+    "currency" TEXT
+);
+
 CREATE TABLE IF NOT EXISTS "hau_values" (
 	"hau_v_id" INTEGER PRIMARY KEY AUTOINCREMENT,
 	"pr_id" INTEGER NOT NULL,

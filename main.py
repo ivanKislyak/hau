@@ -9,6 +9,7 @@ from datetime import date
 # noinspection PyPackageRequirements
 from TkToolTip import ToolTip
 from PIL import Image, ImageTk
+import json
 
 # DB
 BASE_DIR = Path(__file__).resolve().parent
@@ -16,6 +17,7 @@ BASE_DIR = Path(__file__).resolve().parent
 DB_PATH = BASE_DIR / "data" / "hau.db"
 SCHEMA_PATH = BASE_DIR / "schema.sql"
 ICONS_PATH = BASE_DIR / "assets" / "icons"
+LANG_PATH = BASE_DIR / "lang.json"
 
 DB_PATH.parent.mkdir(exist_ok=True)
 
@@ -25,12 +27,22 @@ def db():
             cursor = sql_conn.cursor()
             cursor.executescript(sql_script.read())
 
+# Language Use
+LANG = "en"
+
+with open(LANG_PATH, "r", encoding="utf-8") as f:
+    C_LANG = json.load(f)
+
+def lang_u(key: str, **kwargs) -> str:
+    text = C_LANG.get(LANG, C_LANG["en"]).get(key, C_LANG["en"].get(key, key))
+    return text.format(**kwargs)
+
 # Current version
 c_version = '(0.5)'
 
 # App
 root = tk.Tk()
-root.title("Hau " + c_version)
+root.title(lang_u("app.title", version=c_version))
 root.iconbitmap(default=str(ICONS_PATH / "hau_logo.ico"))
 root.configure(bg="white")
 root.minsize(600, 380)
@@ -433,16 +445,16 @@ def refresh_cards() -> None:
         cursor.execute("""SELECT * FROM properties""")
 
         if not cursor.fetchall():
-            main_label = ttk.Label(canvas_fr, text="No properties found", font=base_bold18, foreground=dp_sea, justify='center')
+            main_label = ttk.Label(canvas_fr, text=lang_u("main.no_properties"), font=base_bold18, foreground=dp_sea, justify='center')
             main_label.configure(background=white, width=25)
             main_label.grid(column=0, row=0, padx=(125, 0), pady=(75, 0))
 
-            lets_add_btn = ttk.Button(canvas_fr, text="Let's add!", command=new_property, style='CustomHelvetica.TButton')
+            lets_add_btn = ttk.Button(canvas_fr, text=lang_u('main.lets_add'), command=new_property, style='CustomHelvetica.TButton')
             lets_add_btn.grid(column=0, row=1)
 
             root.bind("<Return>", new_property)
         else:
-            main_label = ttk.Label(canvas_fr, text="Your properties:", font=base_bold18, foreground=dp_sea)
+            main_label = ttk.Label(canvas_fr, text=lang_u('main.your_properties'), font=base_bold18, foreground=dp_sea)
             main_label.configure(background=white)
             main_label.grid(column=0, row=1, sticky=NS)
 
@@ -463,7 +475,7 @@ def refresh_cards() -> None:
                     name_lb = ttk.Label(card_fr, text=properties[1], style='CustomHelvetica14.TLabel', justify='center', image=house_img if properties[2] == 2 else apartment_img, compound="left")
                     name_lb.grid(row=0, column=0, columnspan=3, pady=3)
 
-                    type_text = 'Category: Flat' if properties[2] == 1 else 'Category: House'
+                    type_text = lang_u('property.category_flat') if properties[2] == 1 else lang_u('property.category_house')
 
                     type_lb = ttk.Label(card_fr, text=type_text, style='CustomHelvetica14.TLabel')
                     type_lb.grid(row=1, column=0, sticky=W, padx=(10, 0))
@@ -485,7 +497,13 @@ def refresh_cards() -> None:
                     if not properties[4]:
                         cursor.execute("""SELECT * FROM tariffs WHERE pr_id = ?""",
                                        (properties[0],))
-                        tariffs = cursor.fetchone()[2:]
+                        tariff_row = cursor.fetchone()
+
+                        if tariff_row is None:
+                            tariffs = (0, 0, 0, 0, 0, 0)
+                        else:
+                            tariffs = tariff_row[2:]
+
                         cursor.execute("""SELECT * FROM hau_values WHERE pr_id = ? ORDER BY hau_v_id DESC""",
                                        (properties[0],))
                         values = cursor.fetchall()
@@ -533,7 +551,7 @@ def refresh_cards() -> None:
 
                     card_row +=1
 
-            lets_add_btn = ttk.Button(canvas_fr, text="Add more", command=new_property, style='CustomHelvetica.TButton')
+            lets_add_btn = ttk.Button(canvas_fr, text=lang_u('main.add_more'), command=new_property, style='CustomHelvetica.TButton')
             lets_add_btn.grid(column=0, row=card_row, sticky=NS, pady=10, padx=10)
 
             for child in mainframe.winfo_children():
@@ -554,7 +572,7 @@ def redact_pr(pr_id):
 
     red_pr = Toplevel(root)
     red_pr.focus_force()
-    red_pr.title(f'Updating values for {pr_info[1]}')
+    red_pr.title(lang_u('window.edit_property.title', property_name=pr_info[1]))
     red_pr.minsize(200, 200)
     red_pr.configure(bg=white)
 
@@ -577,7 +595,7 @@ def redact_pr(pr_id):
     def tariff_for(value_h, up_entry, up_btn):
         r_tariff_top = tk.Toplevel(root)
         r_tariff_top.focus_force()
-        r_tariff_top.title("Hau " + c_version + ' - changing tariff for ' + value_h)
+        r_tariff_top.title(lang_u('window.edit_tariff.title', version=c_version, utility=value_h))
         r_tariff_top.configure(bg="white")
         r_tariff_top.minsize(250, 200)
         r_tariff_top.columnconfigure(0, weight=1)
@@ -994,7 +1012,7 @@ def redact_pr(pr_id):
 def new_property(_event=None):
     add_property = Toplevel(root)
     add_property.focus_force()
-    add_property.title("Hau " + c_version + ' - adding property')
+    add_property.title(lang_u("window.add_property.title", version=c_version))
     add_property.configure(bg="white")
     add_property.minsize(200, 450)
     add_property.columnconfigure(0, weight=1)
