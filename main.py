@@ -10,6 +10,7 @@ from datetime import date
 from TkToolTip import ToolTip
 from PIL import Image, ImageTk
 import json
+from logic import to_number, calc_tiered_payment, commas_to_dots
 
 # DB
 BASE_DIR = Path(__file__).resolve().parent
@@ -186,45 +187,6 @@ root.bind("<MouseWheel>", on_mouse_wheel)
 root.bind('<Down>', on_mouse_wheel)
 
 # Main functions
-def to_number(value):
-    if type(value) is str and separator in value:
-        return value.split(separator)
-    if value in ('', None):
-        return 0
-    return float(value)
-
-def calc_tiered_payment(units, tariff_parts):
-    total = 0
-    units_left = units
-
-    for limit, rate in zip(tariff_parts[0::2], tariff_parts[1::2]):
-        limit = to_number(limit)
-        rate = to_number(rate)
-
-        if units_left <= 0:
-            break
-
-        used_units = units_left if limit == pos_inf else min(units_left, limit)
-
-        total += used_units * rate
-        units_left -= used_units
-
-    return total
-
-def commas_to_dots(my_list: list[str], commas_qty: int = 1) -> list:
-    """
-    Replaces commas with dots in each string from the given list.
-
-    Args:
-        my_list: List of strings where commas should be replaced.
-        commas_qty: Maximum number of commas to replace in each string.
-
-    Returns:
-        A new list with commas replaced by dots.
-    """
-
-    return [item.replace(',', '.', commas_qty) for item in my_list]
-
 def close_window(_event, window):
     window.destroy()
 
