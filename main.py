@@ -26,14 +26,14 @@ def db():
             cursor.executescript(sql_script.read())
 
 # Current version
-c_version = '(0.4)'
+c_version = '(0.5)'
 
 # App
 root = tk.Tk()
 root.title("Hau " + c_version)
 root.iconbitmap(default=str(ICONS_PATH / "hau_logo.ico"))
 root.configure(bg="white")
-root.minsize(460, 380)
+root.minsize(600, 380)
 root.columnconfigure(0, weight=1)
 root.rowconfigure(0, weight=1)
 
@@ -141,6 +141,7 @@ note_for_tiered = (f"Note: Some tariff plans use tiered pricing, meaning the uni
 
 # Useful variables
 separator = '|'
+pos_inf = float('inf')
 
 # Main frame
 mainframe = tk.Frame(root, bg='white')
@@ -303,7 +304,11 @@ def confirm_rate_info(v: StringVar, s_entry, c_frame, tariff_frm, tariff_top, n_
             return None
 
     elif v.get() == 'Tiered':
-        insert_value = [er_ch.get() for er_ch in c_frame.winfo_children() if isinstance(er_ch, ttk.Entry)]
+        insert_value = [
+                        str(pos_inf) if er_ch.get() == 'Remaining' else er_ch.get()
+                        for er_ch in c_frame.winfo_children()
+                        if isinstance(er_ch, ttk.Entry)
+                        ]
 
         for val in insert_value:
             if not val:
@@ -612,9 +617,25 @@ def redact_pr(pr_id):
 
         def del_cur(del_btn):
             nonlocal row_t
+
             r = int(del_btn.grid_info()['row'])
 
             for ch in list(c_frame.winfo_children()):
+                info_grid = ch.grid_info()
+
+                if info_grid.get('row') == row_t - 1:
+                    if isinstance(ch, tk.Label) and ch.cget('text') == '':
+                        ch.config(text='Next')
+
+                    if isinstance(ch, ttk.Entry) and info_grid.get('column') == 1:
+                        ch.delete(0, tk.END)
+                        ch.grid(column=2, columnspan=1)
+                        ch.configure(width=3)
+
+                    if getattr(infinity_btn, "is_infinite", True):
+                        infinity_btn.configure(image=infinity_img)
+                        setattr(infinity_btn, "is_infinite", False)
+
                 info_grid = ch.grid_info()
 
                 if not info_grid:
@@ -644,6 +665,22 @@ def redact_pr(pr_id):
         def add_more(btn):
             nonlocal row_t
             cur_row = row_t
+
+            for ch in c_frame.winfo_children():
+                info = ch.grid_info()
+
+                if info.get('row') == cur_row-1:
+                    if isinstance(ch, tk.Label) and ch.cget('text') == '':
+                        ch.config(text='Next')
+
+                    if isinstance(ch, ttk.Entry) and info.get('column') == 1:
+                        ch.delete(0, tk.END)
+                        ch.grid(column=2, columnspan=1)
+                        ch.configure(width=3)
+
+                    if getattr(infinity_btn, "is_infinite", True):
+                        infinity_btn.configure(image=infinity_img)
+                        setattr(infinity_btn, "is_infinite", False)
 
             infinity_btn.grid(row=cur_row, column=0, padx=5, pady=5)
             tk.Label(c_frame, text='Next', bg=white, fg=black, font=base14).grid(row=cur_row, column=1, padx=5, pady=5)
@@ -991,8 +1028,6 @@ def new_property(_event=None):
 
         row_t = 2
 
-
-
         infinity_btn = ttk.Button(c_frame, image=infinity_img, style='CustomHelvetica.TButton')
         setattr(infinity_btn, "is_infinite", False)
         infinity_btn.configure(command=lambda: rest_counting(infinity_btn, c_frame))
@@ -1005,6 +1040,21 @@ def new_property(_event=None):
             r = int(del_btn.grid_info()['row'])
 
             for ch in list(c_frame.winfo_children()):
+                info_grid = ch.grid_info()
+
+                if info_grid.get('row') == row_t - 1:
+                    if isinstance(ch, tk.Label) and ch.cget('text') == '':
+                        ch.config(text='Next')
+
+                    if isinstance(ch, ttk.Entry) and info_grid.get('column') == 1:
+                        ch.delete(0, tk.END)
+                        ch.grid(column=2, columnspan=1)
+                        ch.configure(width=3)
+
+                    if getattr(infinity_btn, "is_infinite", True):
+                        infinity_btn.configure(image=infinity_img)
+                        setattr(infinity_btn, "is_infinite", False)
+
                 info_grid = ch.grid_info()
 
                 if not info_grid:
@@ -1033,8 +1083,23 @@ def new_property(_event=None):
 
         def add_more(btn):
             nonlocal row_t
-
             cur_row = row_t
+
+            for ch in c_frame.winfo_children():
+                info = ch.grid_info()
+
+                if info.get('row') == cur_row-1:
+                    if isinstance(ch, tk.Label) and ch.cget('text') == '':
+                        ch.config(text='Next')
+
+                    if isinstance(ch, ttk.Entry) and info.get('column') == 1:
+                        ch.delete(0, tk.END)
+                        ch.grid(column=2, columnspan=1)
+                        ch.configure(width=3)
+
+                    if getattr(infinity_btn, "is_infinite", True):
+                        infinity_btn.configure(image=infinity_img)
+                        setattr(infinity_btn, "is_infinite", False)
 
             infinity_btn.grid(row=cur_row, column=0, padx=5, pady=5)
             tk.Label(c_frame, text='Next', bg=white, fg=black, font=base14).grid(row=cur_row, column=1, padx=5, pady=5)
