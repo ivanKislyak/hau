@@ -181,6 +181,24 @@ def to_number(value):
         return 0
     return float(value)
 
+def calc_tiered_payment(units, tariff_parts):
+    total = 0
+    units_left = units
+
+    for limit, rate in zip(tariff_parts[0::2], tariff_parts[1::2]):
+        limit = to_number(limit)
+        rate = to_number(rate)
+
+        if units_left <= 0:
+            break
+
+        used_units = units_left if limit == pos_inf else min(units_left, limit)
+
+        total += used_units * rate
+        units_left -= used_units
+
+    return total
+
 def commas_to_dots(my_list: list[str], commas_qty: int = 1) -> list:
     """
     Replaces commas with dots in each string from the given list.
@@ -303,23 +321,34 @@ def confirm_rate_info(v: StringVar, s_entry, c_frame, tariff_frm, tariff_top, n_
             messagebox.showerror('Error', 'Enter the numerical values', parent=tariff_frm)
             return None
 
+
     elif v.get() == 'Tiered':
+
         insert_value = [
-                        str(pos_inf) if er_ch.get() == 'Remaining' else er_ch.get()
-                        for er_ch in c_frame.winfo_children()
-                        if isinstance(er_ch, ttk.Entry)
-                        ]
+
+            str(pos_inf) if er_ch.get() == 'Remaining' else er_ch.get().replace(',', '.', 1)
+
+            for er_ch in c_frame.winfo_children()
+
+            if isinstance(er_ch, ttk.Entry)
+
+        ]
 
         for val in insert_value:
+
             if not val:
                 messagebox.showerror('Error', 'All fields must be filled in', parent=tariff_frm)
+
                 return None
 
-        for v in commas_to_dots(insert_value, len(insert_value)):
             try:
-                float(v)
+
+                float(val)
+
             except ValueError:
+
                 messagebox.showerror('Error', 'Enter the numerical values', parent=tariff_frm)
+
                 return None
 
         insert_value = separator.join(insert_value)
@@ -468,29 +497,21 @@ def refresh_cards() -> None:
                             prev_values = (0, 0, 0, 0, 0, 0)
 
                         calc_res = 0
-                        res = 0
 
                         for cv, pv, t in zip(current_values, prev_values, tariffs):
                             cv = to_number(cv)
                             pv = to_number(pv)
                             t = to_number(t)
 
-                            if type(t) is float or type(t) is int:
-                                calc_res += ((cv if pv else 0) - pv) * t
-                            else:
-                                calc_res += ((cv if pv else 0) - pv)
-                                len_t = len(t)
+                            units = (cv if pv else 0) - pv
 
-                                for i, v in enumerate(t):
-                                    v = to_number(v)
-                                    if i % 2 == 0 and i <= len_t-1:
-                                        if calc_res > v:
-                                            calc_res -= v
-                                            res += v * to_number(t[i+1])
-                                        elif calc_res > 0:
-                                            res += calc_res * to_number(t[i + 1])
-                                            calc_res -= v
-                                calc_res = res
+                            if units <= 0 or not t:
+                                continue
+
+                            if isinstance(t, (int, float)):
+                                calc_res += units * t
+                            else:
+                                calc_res += calc_tiered_payment(units, t)
 
                         calc_res_lbl = Label(card_fr, text=f'Payment: {calc_res}' if calc_res else None, bg=white, fg='green', font=base14)
                         calc_res_lbl.grid(row=rcount, column=2, sticky=E, padx=(0, 10), pady=(15, 0))
@@ -620,38 +641,38 @@ def redact_pr(pr_id):
 
             r = int(del_btn.grid_info()['row'])
 
-            for ch in list(c_frame.winfo_children()):
-                info_grid = ch.grid_info()
+            for child in list(c_frame.winfo_children()):
+                child_info = child.grid_info()
 
-                if info_grid.get('row') == row_t - 1:
-                    if isinstance(ch, tk.Label) and ch.cget('text') == '':
-                        ch.config(text='Next')
+                if child_info.get('row') == row_t - 1:
+                    if isinstance(child, tk.Label) and child.cget('text') == '':
+                        child.config(text='Next')
 
-                    if isinstance(ch, ttk.Entry) and info_grid.get('column') == 1:
-                        ch.delete(0, tk.END)
-                        ch.grid(column=2, columnspan=1)
-                        ch.configure(width=3)
+                    if isinstance(child, ttk.Entry) and child_info.get('column') == 1:
+                        child.delete(0, tk.END)
+                        child.grid(column=2, columnspan=1)
+                        child.configure(width=3)
 
                     if getattr(infinity_btn, "is_infinite", True):
                         infinity_btn.configure(image=infinity_img)
                         setattr(infinity_btn, "is_infinite", False)
 
-                info_grid = ch.grid_info()
+                child_info = child.grid_info()
 
-                if not info_grid:
+                if not child_info:
                     continue
 
-                row_grid = int(info_grid['row'])
+                child_row = int(child_info['row'])
 
-                if row_grid == r:
-                    if ch is infinity_btn:
-                        ch.grid_forget()
-                    elif ch is c_btn:
+                if child_row == r:
+                    if child is infinity_btn:
+                        child.grid_forget()
+                    elif child is c_btn:
                         continue
                     else:
-                        ch.destroy()
-                elif row_grid > r:
-                    ch.grid_configure(row=row_grid - 1)
+                        child.destroy()
+                elif child_row > r:
+                    child.grid_configure(row=child_row - 1)
 
             row_t -= 1
 
@@ -666,17 +687,17 @@ def redact_pr(pr_id):
             nonlocal row_t
             cur_row = row_t
 
-            for ch in c_frame.winfo_children():
-                info = ch.grid_info()
+            for child in c_frame.winfo_children():
+                child_info = child.grid_info()
 
-                if info.get('row') == cur_row-1:
-                    if isinstance(ch, tk.Label) and ch.cget('text') == '':
-                        ch.config(text='Next')
+                if child_info.get('row') == cur_row - 1:
+                    if isinstance(child, tk.Label) and child.cget('text') == '':
+                        child.config(text='Next')
 
-                    if isinstance(ch, ttk.Entry) and info.get('column') == 1:
-                        ch.delete(0, tk.END)
-                        ch.grid(column=2, columnspan=1)
-                        ch.configure(width=3)
+                    if isinstance(child, ttk.Entry) and child_info.get('column') == 1:
+                        child.delete(0, tk.END)
+                        child.grid(column=2, columnspan=1)
+                        child.configure(width=3)
 
                     if getattr(infinity_btn, "is_infinite", True):
                         infinity_btn.configure(image=infinity_img)
@@ -765,7 +786,28 @@ def redact_pr(pr_id):
                     )
 
                     for widget, separated_value in zip(entries, separated_values):
-                        widget.insert(0, separated_value)
+                        if separated_value == str(pos_inf):
+                            widget.insert(0, 'Remaining')
+
+                            row = widget.grid_info().get('row')
+
+                            for ch in c_frame.winfo_children():
+                                info = ch.grid_info()
+
+                                if info.get('row') == row:
+                                    if isinstance(ch, (tk.Label, ttk.Label)) and ch.cget('text') == 'Next':
+                                        ch.config(text='')
+
+                                    if isinstance(ch, ttk.Entry) and info.get('column') == 2:
+                                        ch.grid(column=1, columnspan=2)
+                                        ch.configure(width=9)
+
+                            infinity_btn.grid(row=row, column=0, padx=5, pady=5)
+                            infinity_btn.configure(image=return_img)
+                            setattr(infinity_btn, "is_infinite", True)
+
+                        else:
+                            widget.insert(0, separated_value)
 
         flat_or_tiered(vs)
 
