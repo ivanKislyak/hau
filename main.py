@@ -175,6 +175,13 @@ canvas_fr.bind(
 )
 canvas_window = main_canvas.create_window((0, 0), window=canvas_fr, anchor="nw")
 
+canvas_fr.columnconfigure(0, weight=1)
+
+def resize_canvas_frame(event):
+    main_canvas.itemconfigure(canvas_window, width=event.width)
+
+main_canvas.bind("<Configure>", resize_canvas_frame)
+
 def on_mouse_wheel(event):
     main_canvas.yview_scroll(int(-1 * (event.delta / 120)), "units")
 
@@ -404,7 +411,7 @@ def refresh_cards() -> None:
         if not cursor.fetchall():
             main_label = ttk.Label(canvas_fr, text=lang_u("main.no_properties"), font=base_bold18, foreground=dp_sea, justify='center')
             main_label.configure(background=white, width=25)
-            main_label.grid(column=0, row=0, padx=(125, 0), pady=(75, 0))
+            main_label.grid(column=0, row=0, pady=(75, 0))
 
             lets_add_btn = ttk.Button(canvas_fr, text=lang_u("main.lets_add"), command=new_property, style='CustomHelvetica.TButton')
             lets_add_btn.grid(column=0, row=1)
@@ -511,9 +518,6 @@ def refresh_cards() -> None:
             lets_add_btn = ttk.Button(canvas_fr, text=lang_u("main.add_more"), command=new_property, style='CustomHelvetica.TButton')
             lets_add_btn.grid(column=0, row=card_row, sticky=NS, pady=10, padx=10)
 
-            for child in mainframe.winfo_children():
-                child.grid_configure(padx=5, pady=5)
-
             root.bind('<Return>', new_property)
 
 def redact_pr(pr_id):
@@ -532,6 +536,8 @@ def redact_pr(pr_id):
     red_pr.title(lang_u("window.edit_property.title", property_name=pr_info[1]))
     red_pr.minsize(500, 450)
     red_pr.configure(bg=white)
+    red_pr.columnconfigure(0, weight=1)
+    red_pr.rowconfigure(0, weight=1)
 
     rpr_width, rpr_height = 500, 450
     rpr_screen_width = red_pr.winfo_screenwidth()
@@ -556,10 +562,7 @@ def redact_pr(pr_id):
         r_tariff_top.configure(bg="white")
         r_tariff_top.minsize(250, 200)
         r_tariff_top.columnconfigure(0, weight=1)
-        r_tariff_top.columnconfigure(1, weight=1)
         r_tariff_top.rowconfigure(0, weight=1)
-        r_tariff_top.rowconfigure(1, weight=1)
-        r_tariff_top.rowconfigure(3, weight=1)
 
         r_tariff_top.geometry(f"{rpr_width}x{rpr_height}+{rpr_x}+{rpr_y}")
 
@@ -973,8 +976,9 @@ def new_property(_event=None):
     add_property.configure(bg="white")
     add_property.minsize(500, 450)
     add_property.columnconfigure(0, weight=1)
+    add_property.rowconfigure(0, weight=1)
 
-    pr_width, pr_height = 400, 400
+    pr_width, pr_height = 500, 450
     pr_screen_width = add_property.winfo_screenwidth()
     pr_screen_height = add_property.winfo_screenheight()
     pr_x = (pr_screen_width - pr_width) // 2
@@ -997,10 +1001,7 @@ def new_property(_event=None):
         tariff_top.configure(bg="white")
         tariff_top.minsize(250, 200)
         tariff_top.columnconfigure(0, weight=1)
-        tariff_top.columnconfigure(1, weight=1)
         tariff_top.rowconfigure(0, weight=1)
-        tariff_top.rowconfigure(1, weight=1)
-        tariff_top.rowconfigure(3, weight=1)
 
         tariff_top.geometry(f"{pr_width}x{pr_height}+{pr_x}+{pr_y}")
 
