@@ -1,3 +1,4 @@
 Pillow
 tkinter-tooltip==3.1.2
 customtkinter
+pytest

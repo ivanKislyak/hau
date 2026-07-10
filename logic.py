@@ -1,14 +1,14 @@
 separator = '|'
 pos_inf = float('inf')
 
-def to_number(value):
+def to_number(value: str):
     if type(value) is str and separator in value:
         return value.split(separator)
     if value in ('', None):
         return 0
     return float(value)
 
-def calc_tiered_payment(units, tariff_parts):
+def calc_tiered_payment(units: float | int, tariff_parts: float | int) -> float:
     total = 0
     units_left = units
 
