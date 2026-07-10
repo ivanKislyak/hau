@@ -28,8 +28,8 @@ def db():
             cursor = sql_conn.cursor()
             cursor.executescript(sql_script.read())
 
-# Language Use
-LANG = "en"
+# Available languages: en, ru, kz
+LANG = "kz"
 
 with open(LANG_PATH, "r", encoding="utf-8") as f:
     C_LANG = json.load(f)

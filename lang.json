@@ -4,7 +4,7 @@
     "version": "0.5",
     "description": "UI translations for Hau. Use keys through a small t() helper instead of hardcoded text",
     "default_language": "en",
-    "available_languages": ["en", "ru"]
+    "available_languages": ["en", "ru", "kz"]
   },
   "en": {
     "app.title": "Hau {version}",
@@ -107,5 +107,64 @@
     "tooltip.update_values": "Обновить текущие показания",
     "tooltip.delete_property": "Удалить текущий объект",
     "tooltip.tiered_note": "Некоторые тарифы считаются по ступенчатой схеме: цена за единицу зависит от объёма потребления.\nНапример, если за месяц потрачено 457 единиц электричества, первые 150 единиц могут стоить $0.15 за единицу.\nПосле вычитания 150 остаётся 307 единиц. Эти оставшиеся единицы могут считаться по более высокому тарифу, например $0.18 за единицу.\nВ таком случае первые 150 единиц стоят $22.50, оставшиеся 307 единиц — $55.26, а итоговая сумма к оплате — $77.76."
+  },
+  "kz": {
+    "app.title": "Hau {version}",
+    "window.add_property.title": "Hau {version} — нысан қосу",
+    "window.edit_property.title": "Көрсеткіштерді жаңарту: {property_name}",
+    "window.add_tariff.title": "Hau {version} — {utility} үшін тариф",
+    "window.edit_tariff.title": "Hau {version} — {utility} тарифін өзгерту",
+
+    "main.no_properties": "Нысандар табылмады",
+    "main.lets_add": "Бірінші нысанды қосу",
+    "main.your_properties": "Сіздің нысандарыңыз:",
+    "main.add_more": "Тағы қосу",
+
+    "property.category_flat": "Санат: пәтер",
+    "property.category_house": "Санат: үй",
+    "property.type_flat": "Пәтер",
+    "property.type_house": "Үй",
+    "property.name": "Атауы",
+    "property.fill_current_values": "Ағымдағы көрсеткіштерді енгізіңіз",
+    "property.last_update": "Соңғы жаңарту: {date}",
+    "property.payment": "Төлеуге: {amount}",
+
+    "utility.gas": "Газ",
+    "utility.water": "Су",
+    "utility.electricity": "Электр энергиясы",
+    "utility.heating": "Жылу",
+    "utility.garbage": "Қоқыс шығару",
+    "utility.housing_main": "ТКШ",
+
+    "rate.flat": "Фиксирленген",
+    "rate.tiered": "Күрделі",
+    "rate.flat_rate": "Фиксирленген тариф",
+    "rate.tiered_rate": "Күрделі тариф",
+    "rate.rate_per_unit": "Бірлікке тариф:",
+    "rate.first": "Алғашқы",
+    "rate.next": "Келесі",
+    "rate.remaining": "Қалғаны",
+    "rate.units_cost": "бірл. бағасы:",
+    "rate.confirm": "Тарифті сақтау",
+    "rate.unfilled_warning": "Толтырылмаған тарифтер бар",
+
+    "button.add_property": "Нысан қосу",
+    "button.update_values": "Көрсеткіштерді жаңарту",
+    "button.delete_short": "X",
+
+    "dialog.error_title": "Қате",
+    "dialog.delete_title": "Сенімдісіз бе?",
+    "dialog.delete_message": "Бұл нысанды жойғыңыз келетініне сенімдісіз бе?",
+
+    "error.all_fields_required": "Барлық өрістер толтырылуы керек",
+    "error.enter_numeric": "Сандық мәндерді енгізіңіз",
+    "error.name_required": "«Атауы» өрісі міндетті түрде толтырылуы керек",
+    "error.new_values_lower": "Жаңа көрсеткіштер алдыңғы көрсеткіштерден үлкен немесе тең болуы керек",
+
+    "tooltip.no_rate": "Егер мәнді тарифсіз қалдырсаңыз, көрсеткіштерді жаңартқанда бұл мән бойынша айырма жалпы сомаға әсер етпейді.",
+    "tooltip.remaining_rate": "Бұл тарифті алдыңғы сатылардан асатын барлық бірліктер үшін қолдану.",
+    "tooltip.update_values": "Ағымдағы көрсеткіштерді жаңарту",
+    "tooltip.delete_property": "Ағымдағы нысанды жою",
+    "tooltip.tiered_note": "Кейбір тарифтер сатылы схема бойынша есептеледі: бірлік бағасы тұтыну көлеміне байланысты болады.\nМысалы, егер бір айда 457 бірлік электр энергиясы жұмсалса, алғашқы 150 бірлік бірлігіне $0.15 тұруы мүмкін.\n150-ді алып тастағаннан кейін 307 бірлік қалады. Бұл қалған бірліктер жоғарырақ тарифпен, мысалы бірлігіне $0.18 бойынша есептелуі мүмкін.\nБұл жағдайда алғашқы 150 бірлік $22.50, қалған 307 бірлік $55.26 тұрады, ал төлеуге жалпы сома $77.76 болады."
   }
 }
