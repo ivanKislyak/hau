@@ -46,11 +46,11 @@ root = tk.Tk()
 root.title(lang_u("app.title", version=c_version))
 root.iconbitmap(default=str(ICONS_PATH / "hau_logo.ico"))
 root.configure(bg="white")
-root.minsize(600, 380)
+root.minsize(750, 380)
 root.columnconfigure(0, weight=1)
 root.rowconfigure(0, weight=1)
 
-width, height = 600, 300
+width, height = 750, 300
 screen_width = root.winfo_screenwidth()
 screen_height = root.winfo_screenheight()
 x = (screen_width - width) // 2
@@ -145,12 +145,7 @@ needed_columns = {
 }
 
 # Useful notes
-note_for_tiered = (f"Note: Some tariff plans use tiered pricing, meaning the unit rate is not fixed. \n"
-                   f"For example, if monthly electricity consumption is 457 units, the first 150 units \n"
-                   f"may cost $0.15 per unit. After subtracting 150 from 457, 307 units remain. \n"
-                   f"These remaining units may be charged at a higher rate, for example $0.18 per unit. \n"
-                   f"In this case, the first 150 units cost $22.50, and the remaining 307 units cost $55.26. \n"
-                   f"The total amount to pay is $77.76.")
+note_for_tiered = lang_u("tooltip.tiered_note")
 
 # Useful variables
 separator = '|'
@@ -216,7 +211,7 @@ def setting_rates(entry: ttk.Entry | tk.Entry, n_btn: ttk.Button | tk.Button, n_
     Returns:
         None"""
 
-    ToolTip(war_label, msg='If you leave the value as “no rate,” then when the values are updated, the difference between the values will not affect the total', delay=1.0)
+    ToolTip(war_label, msg=lang_u("tooltip.no_rate"), delay=1.0)
     cursor.execute("""SELECT * FROM tariffs WHERE pr_id = ?""", (n_pr_id,))
     text_inside = entry.get()
     needed_row = entry.grid_info()['row']
@@ -287,12 +282,12 @@ def confirm_rate_info(v: StringVar, s_entry, c_frame, tariff_frm, tariff_top, n_
         insert_value = s_entry.get()
 
         if not insert_value:
-            messagebox.showerror('Error', 'All fields must be filled in', parent=tariff_frm)
+            messagebox.showerror(lang_u("dialog.error_title"), lang_u("error.all_fields_required"), parent=tariff_frm)
             return None
         try:
             float(insert_value)
         except ValueError:
-            messagebox.showerror('Error', 'Enter the numerical values', parent=tariff_frm)
+            messagebox.showerror(lang_u("dialog.error_title"), lang_u("error.enter_numeric"), parent=tariff_frm)
             return None
 
 
@@ -300,7 +295,7 @@ def confirm_rate_info(v: StringVar, s_entry, c_frame, tariff_frm, tariff_top, n_
 
         insert_value = [
 
-            str(pos_inf) if er_ch.get() == 'Remaining' else er_ch.get().replace(',', '.', 1)
+            str(pos_inf) if er_ch.get() == lang_u("rate.remaining") else er_ch.get().replace(',', '.', 1)
 
             for er_ch in c_frame.winfo_children()
 
@@ -311,7 +306,7 @@ def confirm_rate_info(v: StringVar, s_entry, c_frame, tariff_frm, tariff_top, n_
         for val in insert_value:
 
             if not val:
-                messagebox.showerror('Error', 'All fields must be filled in', parent=tariff_frm)
+                messagebox.showerror(lang_u("dialog.error_title"), lang_u("error.all_fields_required"), parent=tariff_frm)
 
                 return None
 
@@ -321,7 +316,7 @@ def confirm_rate_info(v: StringVar, s_entry, c_frame, tariff_frm, tariff_top, n_
 
             except ValueError:
 
-                messagebox.showerror('Error', 'Enter the numerical values', parent=tariff_frm)
+                messagebox.showerror(lang_u("dialog.error_title"), lang_u("error.enter_numeric"), parent=tariff_frm)
 
                 return None
 
@@ -352,14 +347,14 @@ def rest_counting(btn, cc_frame):
             info = ch.grid_info()
 
             if info.get('row') == btn_row:
-                if isinstance(ch, (tk.Label, ttk.Label)) and ch.cget('text') == 'Next':
+                if isinstance(ch, (tk.Label, ttk.Label)) and ch.cget('text') == lang_u("rate.next"):
                     ch.config(text='')
 
                 if isinstance(ch, ttk.Entry) and info.get('column') == 2:
                     ch.delete(0, tk.END)
                     ch.grid(column=1, columnspan=2)
                     ch.configure(width=9)
-                    ch.insert(0, 'Remaining')
+                    ch.insert(0, lang_u("rate.remaining"))
 
     else:
         btn.configure(image=infinity_img)
@@ -370,7 +365,7 @@ def rest_counting(btn, cc_frame):
 
             if info.get('row') == btn_row:
                 if isinstance(ch, (tk.Label, ttk.Label)) and ch.cget('text') == '':
-                    ch.config(text='Next')
+                    ch.config(text=lang_u("rate.next"))
 
                 if isinstance(ch, ttk.Entry) and info.get('column') == 1:
                     ch.delete(0, tk.END)
@@ -411,12 +406,12 @@ def refresh_cards() -> None:
             main_label.configure(background=white, width=25)
             main_label.grid(column=0, row=0, padx=(125, 0), pady=(75, 0))
 
-            lets_add_btn = ttk.Button(canvas_fr, text=lang_u('main.lets_add'), command=new_property, style='CustomHelvetica.TButton')
+            lets_add_btn = ttk.Button(canvas_fr, text=lang_u("main.lets_add"), command=new_property, style='CustomHelvetica.TButton')
             lets_add_btn.grid(column=0, row=1)
 
             root.bind("<Return>", new_property)
         else:
-            main_label = ttk.Label(canvas_fr, text=lang_u('main.your_properties'), font=base_bold18, foreground=dp_sea)
+            main_label = ttk.Label(canvas_fr, text=lang_u("main.your_properties"), font=base_bold18, foreground=dp_sea)
             main_label.configure(background=white)
             main_label.grid(column=0, row=1, sticky=NS)
 
@@ -437,12 +432,12 @@ def refresh_cards() -> None:
                     name_lb = ttk.Label(card_fr, text=properties[1], style='CustomHelvetica14.TLabel', justify='center', image=house_img if properties[2] == 2 else apartment_img, compound="left")
                     name_lb.grid(row=0, column=0, columnspan=3, pady=3)
 
-                    type_text = lang_u('property.category_flat') if properties[2] == 1 else lang_u('property.category_house')
+                    type_text = lang_u("property.category_flat") if properties[2] == 1 else lang_u("property.category_house")
 
                     type_lb = ttk.Label(card_fr, text=type_text, style='CustomHelvetica14.TLabel')
                     type_lb.grid(row=1, column=0, sticky=W, padx=(10, 0))
 
-                    utility_names = ['Gas', 'Water', 'Electricity', 'Heating', 'Garbage', 'HOA fee']
+                    utility_names = [lang_u("utility.gas"), lang_u("utility.water"), lang_u("utility.electricity"), lang_u("utility.heating"), lang_u("utility.garbage"), lang_u("utility.housing_main")]
                     req_values = hau_values[0][2:]
                     rcount = 2
 
@@ -453,7 +448,7 @@ def refresh_cards() -> None:
                             rcount += 1
 
                     cursor.execute("""SELECT * FROM hau_values WHERE hau_v_id = ?""", (hau_values[0][0],))
-                    res = f'Last update: {cursor.fetchone()[-1]}'
+                    res = lang_u("property.last_update", date=cursor.fetchone()[-1])
                     Label(card_fr, text=res, bg=white, fg='grey').grid(row=rcount, column=0, sticky=W, padx=(10, 0), pady=(15, 0))
 
                     if not properties[4]:
@@ -493,27 +488,27 @@ def refresh_cards() -> None:
                             else:
                                 calc_res += calc_tiered_payment(units, t)
 
-                        calc_res_lbl = Label(card_fr, text=f'Payment: {calc_res}' if calc_res else None, bg=white, fg='green', font=base14)
+                        calc_res_lbl = Label(card_fr, text=lang_u("property.payment", amount=calc_res) if calc_res else None, bg=white, fg='green', font=base14)
                         calc_res_lbl.grid(row=rcount, column=2, sticky=E, padx=(0, 10), pady=(15, 0))
 
                     def del_pr(pr_id):
-                        am = messagebox.askquestion('Are you sure?', 'Are you sure for deleting?')
+                        am = messagebox.askquestion(lang_u("dialog.delete_title"), lang_u("dialog.delete_message"))
                         if am == 'yes':
                             yes_del(pr_id)
 
                     new_hau_v = ttk.Button(card_fr, style='CustomHelvetica.TButton', command=lambda vp=properties[0]: redact_pr(vp), image=pencil_img, compound="center")
                     new_hau_v.grid(column=2, row=(rcount // 2)-1, sticky='e', padx=(0, 20))
                     new_hau_v.configure(width=2)
-                    ToolTip(new_hau_v, msg='Update current values', delay=1.0)
+                    ToolTip(new_hau_v, msg=lang_u("tooltip.update_values"), delay=1.0)
 
                     del_pr_btn = ttk.Button(card_fr, style='CustomHelvetica.TButton', command=lambda vp=properties[0]: del_pr(vp), image=trash_img)
                     del_pr_btn.grid(column=2, row=(rcount // 2)+1, sticky='e', padx=(0, 20))
                     del_pr_btn.configure(width=2)
-                    ToolTip(del_pr_btn, msg='Delete current property', delay=1.0)
+                    ToolTip(del_pr_btn, msg=lang_u("tooltip.delete_property"), delay=1.0)
 
                     card_row +=1
 
-            lets_add_btn = ttk.Button(canvas_fr, text=lang_u('main.add_more'), command=new_property, style='CustomHelvetica.TButton')
+            lets_add_btn = ttk.Button(canvas_fr, text=lang_u("main.add_more"), command=new_property, style='CustomHelvetica.TButton')
             lets_add_btn.grid(column=0, row=card_row, sticky=NS, pady=10, padx=10)
 
             for child in mainframe.winfo_children():
@@ -534,11 +529,11 @@ def redact_pr(pr_id):
 
     red_pr = Toplevel(root)
     red_pr.focus_force()
-    red_pr.title(lang_u('window.edit_property.title', property_name=pr_info[1]))
-    red_pr.minsize(200, 200)
+    red_pr.title(lang_u("window.edit_property.title", property_name=pr_info[1]))
+    red_pr.minsize(500, 450)
     red_pr.configure(bg=white)
 
-    rpr_width, rpr_height = 400, 400
+    rpr_width, rpr_height = 500, 450
     rpr_screen_width = red_pr.winfo_screenwidth()
     rpr_screen_height = red_pr.winfo_screenheight()
     rpr_x = (rpr_screen_width - rpr_width) // 2
@@ -557,7 +552,7 @@ def redact_pr(pr_id):
     def tariff_for(value_h, up_entry, up_btn):
         r_tariff_top = tk.Toplevel(root)
         r_tariff_top.focus_force()
-        r_tariff_top.title(lang_u('window.edit_tariff.title', version=c_version, utility=value_h))
+        r_tariff_top.title(lang_u("window.edit_tariff.title", version=c_version, utility=value_h))
         r_tariff_top.configure(bg="white")
         r_tariff_top.minsize(250, 200)
         r_tariff_top.columnconfigure(0, weight=1)
@@ -571,7 +566,7 @@ def redact_pr(pr_id):
         tariff_frm = tk.Frame(r_tariff_top, bg=white)
         tariff_frm.grid(row=0, column=0)
 
-        s_lbl = tk.Label(tariff_frm, text='Rate per unit:', bg=white, fg=black, font=base14)
+        s_lbl = tk.Label(tariff_frm, text=lang_u("rate.rate_per_unit"), bg=white, fg=black, font=base14)
         s_lbl.grid(row=1, column=0, padx=5, pady=5, sticky='nw')
 
         s_entry = ttk.Entry(tariff_frm, font=base14, foreground=black, background=white, width=5)
@@ -580,25 +575,25 @@ def redact_pr(pr_id):
         c_frame = Frame(tariff_frm, bg='white')
         c_frame.grid(row=3, columnspan=5)
 
-        c_lbl = tk.Label(c_frame, text='First', bg=white, fg=black, font=base14)
+        c_lbl = tk.Label(c_frame, text=lang_u("rate.first"), bg=white, fg=black, font=base14)
         c_lbl.grid(row=0, column=1, padx=5, pady=5)
 
         c_entry = ttk.Entry(c_frame, font=base14, foreground=black, background=white, width=3)
         c_entry.grid(row=0, column=2)
 
-        c2_lbl = tk.Label(c_frame, text='units cost: ', bg=white, fg=black, font=base14)
+        c2_lbl = tk.Label(c_frame, text=lang_u("rate.units_cost"), bg=white, fg=black, font=base14)
         c2_lbl.grid(row=0, column=3, padx=5, pady=5)
 
         c2_entry = ttk.Entry(c_frame, font=base14, foreground=black, background=white, width=3)
         c2_entry.grid(row=0, column=4)
 
-        c3_lbl = tk.Label(c_frame, text='Next', bg=white, fg=black, font=base14)
+        c3_lbl = tk.Label(c_frame, text=lang_u("rate.next"), bg=white, fg=black, font=base14)
         c3_lbl.grid(row=1, column=1, padx=5, pady=5)
 
         c3_entry = ttk.Entry(c_frame, font=base14, foreground=black, background=white, width=3)
         c3_entry.grid(row=1, column=2)
 
-        c4_lbl = tk.Label(c_frame, text='units cost: ', bg=white, fg=black, font=base14)
+        c4_lbl = tk.Label(c_frame, text=lang_u("rate.units_cost"), bg=white, fg=black, font=base14)
         c4_lbl.grid(row=1, column=3, padx=5, pady=5)
 
         c4_entry = ttk.Entry(c_frame, font=base14, foreground=black, background=white, width=3)
@@ -614,7 +609,7 @@ def redact_pr(pr_id):
         setattr(infinity_btn, "is_infinite", False)
         infinity_btn.configure(command=lambda: rest_counting(infinity_btn, c_frame))
 
-        ToolTip(infinity_btn, msg='Use this rate for all units above the previous tiers', delay=1.0)
+        ToolTip(infinity_btn, msg=lang_u("tooltip.remaining_rate"), delay=1.0)
 
         def del_cur(del_btn):
             nonlocal row_t
@@ -626,7 +621,7 @@ def redact_pr(pr_id):
 
                 if child_info.get('row') == row_t - 1:
                     if isinstance(child, tk.Label) and child.cget('text') == '':
-                        child.config(text='Next')
+                        child.config(text=lang_u("rate.next"))
 
                     if isinstance(child, ttk.Entry) and child_info.get('column') == 1:
                         child.delete(0, tk.END)
@@ -672,7 +667,7 @@ def redact_pr(pr_id):
 
                 if child_info.get('row') == cur_row - 1:
                     if isinstance(child, tk.Label) and child.cget('text') == '':
-                        child.config(text='Next')
+                        child.config(text=lang_u("rate.next"))
 
                     if isinstance(child, ttk.Entry) and child_info.get('column') == 1:
                         child.delete(0, tk.END)
@@ -684,9 +679,9 @@ def redact_pr(pr_id):
                         setattr(infinity_btn, "is_infinite", False)
 
             infinity_btn.grid(row=cur_row, column=0, padx=5, pady=5)
-            tk.Label(c_frame, text='Next', bg=white, fg=black, font=base14).grid(row=cur_row, column=1, padx=5, pady=5)
+            tk.Label(c_frame, text=lang_u("rate.next"), bg=white, fg=black, font=base14).grid(row=cur_row, column=1, padx=5, pady=5)
             ttk.Entry(c_frame, font=base14, foreground=black, background=white, width=3).grid(row=cur_row, column=2)
-            tk.Label(c_frame, text='units cost: ', bg=white, fg=black, font=base14).grid(row=cur_row, column=3, padx=5, pady=5)
+            tk.Label(c_frame, text=lang_u("rate.units_cost"), bg=white, fg=black, font=base14).grid(row=cur_row, column=3, padx=5, pady=5)
             ttk.Entry(c_frame, font=base14, foreground=black, background=white, width=3).grid(row=cur_row, column=4)
 
             del_btn = ttk.Button(c_frame, text='X', style='CustomHelvetica.TButton', width=2)
@@ -699,11 +694,11 @@ def redact_pr(pr_id):
         vs = StringVar()
         vs.set('Flat')
 
-        confirm_rate_btn = ttk.Button(tariff_frm, style='CustomHelvetica.TButton', text='Confirm rate info',
+        confirm_rate_btn = ttk.Button(tariff_frm, style='CustomHelvetica.TButton', text=lang_u("rate.confirm"),
                                       command=lambda v=vs: confirm_rate_info(v, s_entry, c_frame, tariff_frm, r_tariff_top, pr_id, red_conn, r_cursor, value_h, up_entry, up_btn, entry_buttons, war_label))
         confirm_rate_btn.grid(row=5, column=0, columnspan=3, sticky='ew', pady=(10, 5), padx=5)
 
-        c_btn = ttk.Button(c_frame, style='CustomHelvetica.TButton', text='Add more')
+        c_btn = ttk.Button(c_frame, style='CustomHelvetica.TButton', text=lang_u("main.add_more"))
         c_btn.grid(row=row_t, column=1, columnspan=4, sticky='ew', pady=(10, 5))
         c_btn.configure(command=lambda b=c_btn: add_more(b))
 
@@ -734,10 +729,10 @@ def redact_pr(pr_id):
                     except KeyError:
                         pass
 
-        flat_rate = ttk.Radiobutton(tariff_frm, text='Flat rate', style='CustomHelvetica.TRadiobutton', variable=vs, value='Flat', command=lambda v=vs: flat_or_tiered(v))
+        flat_rate = ttk.Radiobutton(tariff_frm, text=lang_u("rate.flat_rate"), style='CustomHelvetica.TRadiobutton', variable=vs, value=lang_u("rate.flat"), command=lambda v=vs: flat_or_tiered(v))
         flat_rate.grid(column=0, row=0, padx=5, pady=5, sticky='w')
 
-        tiered_rate = ttk.Radiobutton(tariff_frm, text='Tiered rate', style='CustomHelvetica.TRadiobutton', variable=vs, value='Tiered', command=lambda v=vs: flat_or_tiered(v))
+        tiered_rate = ttk.Radiobutton(tariff_frm, text=lang_u("rate.tiered_rate"), style='CustomHelvetica.TRadiobutton', variable=vs, value='Tiered', command=lambda v=vs: flat_or_tiered(v))
         tiered_rate.grid(column=0, row=2, padx=5, pady=5, sticky='w')
 
         ToolTip(tiered_rate, msg=note_for_tiered, delay=1.0)
@@ -750,7 +745,7 @@ def redact_pr(pr_id):
         if result_get_v:
             if result_get_v[needed_columns[value_h]]:
                 if not separator in result_get_v[needed_columns[value_h]]:
-                    vs.set('Flat')
+                    vs.set(lang_u("rate.flat"))
                     s_entry.insert(0, result_get_v[needed_columns[value_h]])
                 else:
                     vs.set('Tiered')
@@ -767,7 +762,7 @@ def redact_pr(pr_id):
 
                     for widget, separated_value in zip(entries, separated_values):
                         if separated_value == str(pos_inf):
-                            widget.insert(0, 'Remaining')
+                            widget.insert(0, lang_u("rate.remaining"))
 
                             row = widget.grid_info().get('row')
 
@@ -775,7 +770,7 @@ def redact_pr(pr_id):
                                 info = ch.grid_info()
 
                                 if info.get('row') == row:
-                                    if isinstance(ch, (tk.Label, ttk.Label)) and ch.cget('text') == 'Next':
+                                    if isinstance(ch, (tk.Label, ttk.Label)) and ch.cget('text') == lang_u("rate.next"):
                                         ch.config(text='')
 
                                     if isinstance(ch, ttk.Entry) and info.get('column') == 2:
@@ -791,7 +786,7 @@ def redact_pr(pr_id):
 
         flat_or_tiered(vs)
 
-    property_types = ['Flat', 'House']
+    property_types = [lang_u('property.type_flat'), lang_u('property.type_house')]
     property_type = ttk.Combobox(red_property_frm, values=property_types, style='CustomHelvetica.TCombobox',
                                  font=base18, state='readonly', justify='center')
     property_type.grid(column=0, row=0, pady=10, columnspan=3)
@@ -800,7 +795,7 @@ def redact_pr(pr_id):
     name_frm = tk.Frame(red_property_frm, bg=white)
     name_frm.grid(row=1, column=0, sticky='w')
 
-    rpr_name_label = ttk.Label(name_frm, text='Name', style='CustomHelvetica.TLabel')
+    rpr_name_label = ttk.Label(name_frm, text=lang_u("property.name"), style='CustomHelvetica.TLabel')
     rpr_name_label.grid(column=0, row=0, padx=(10, 0))
     ttk.Label(name_frm, text='*', foreground='red', background='white', font=("Helvetica", 14)).grid(column=1, row=0)
 
@@ -808,11 +803,11 @@ def redact_pr(pr_id):
     rpr_name_entry.grid(column=1, row=1, sticky="e")
     rpr_name_entry.insert(0, pr_name)
 
-    fill_info = ttk.Label(red_property_frm, text='Fill in the current values', font=("Helvetica", 14, 'bold'),
+    fill_info = ttk.Label(red_property_frm, text=lang_u("property.fill_current_values"), font=("Helvetica", 14, 'bold'),
                           foreground='darkgrey', background='white')
     fill_info.grid(column=0, row=2, columnspan=2, sticky="w", padx=10)
 
-    rpr_gas_label = ttk.Label(red_property_frm, text='Gas', style='CustomHelvetica.TLabel')
+    rpr_gas_label = ttk.Label(red_property_frm, text=lang_u("utility.gas"), style='CustomHelvetica.TLabel')
     rpr_gas_label.grid(column=0, row=3, sticky="w", padx=10)
 
     rpr_gas_entry = ttk.Entry(red_property_frm, font=base14, foreground=black, background=white)
@@ -824,7 +819,7 @@ def redact_pr(pr_id):
     rpr_gas_btn.grid(column=2, row=3, sticky="e", padx=10)
     rpr_gas_btn.image_name = 'settings_img'
 
-    rpr_water_label = ttk.Label(red_property_frm, text='Water', style='CustomHelvetica.TLabel')
+    rpr_water_label = ttk.Label(red_property_frm, text=lang_u("utility.water"), style='CustomHelvetica.TLabel')
     rpr_water_label.grid(column=0, row=4, sticky="w", padx=10)
 
     rpr_water_entry = ttk.Entry(red_property_frm, font=base14, foreground=black, background=white)
@@ -835,7 +830,7 @@ def redact_pr(pr_id):
     rpr_water_btn.grid(column=2, row=4, sticky="e", padx=10)
     rpr_water_btn.image_name = 'settings_img'
 
-    rpr_electricity_label = ttk.Label(red_property_frm, text='Electricity', style='CustomHelvetica.TLabel')
+    rpr_electricity_label = ttk.Label(red_property_frm, text=lang_u("utility.electricity"), style='CustomHelvetica.TLabel')
     rpr_electricity_label.grid(column=0, row=5, sticky="w", padx=10)
 
     rpr_electricity_entry = ttk.Entry(red_property_frm, font=base14, foreground=black, background=white)
@@ -847,7 +842,7 @@ def redact_pr(pr_id):
     rpr_electricity_btn.grid(column=2, row=5, sticky="e", padx=10)
     rpr_electricity_btn.image_name = 'settings_img'
 
-    rpr_heating_label = ttk.Label(red_property_frm, text='Heating', style='CustomHelvetica.TLabel')
+    rpr_heating_label = ttk.Label(red_property_frm, text=lang_u("utility.heating"), style='CustomHelvetica.TLabel')
     rpr_heating_label.grid(column=0, row=6, sticky="w", padx=10)
 
     rpr_heating_entry = ttk.Entry(red_property_frm, font=base14, foreground=black, background=white)
@@ -859,7 +854,7 @@ def redact_pr(pr_id):
     rpr_heating_btn.grid(column=2, row=6, sticky="e", padx=10)
     rpr_heating_btn.image_name = 'settings_img'
 
-    rpr_garbage_label = ttk.Label(red_property_frm, text='Garbage', style='CustomHelvetica.TLabel')
+    rpr_garbage_label = ttk.Label(red_property_frm, text=lang_u("utility.garbage"), style='CustomHelvetica.TLabel')
     rpr_garbage_label.grid(column=0, row=7, sticky="w", padx=10)
 
     rpr_garbage_entry = ttk.Entry(red_property_frm, font=base14, foreground=black, background=white)
@@ -870,7 +865,7 @@ def redact_pr(pr_id):
     rpr_garbage_btn.grid(column=2, row=7, sticky="e", padx=10)
     rpr_garbage_btn.image_name = 'settings_img'
 
-    rpr_housing_main_label = ttk.Label(red_property_frm, text='HOA fee', style='CustomHelvetica.TLabel')
+    rpr_housing_main_label = ttk.Label(red_property_frm, text=lang_u("utility.housing_main"), style='CustomHelvetica.TLabel')
     rpr_housing_main_label.grid(column=0, row=8, sticky="w", padx=10)
 
     rpr_housing_main_entry = ttk.Entry(red_property_frm, font=base14, foreground=black, background=white)
@@ -893,7 +888,7 @@ def redact_pr(pr_id):
 
     war_label = ctk.CTkLabel(
         red_property_frm,
-        text="You have unfilled rates",
+        text=lang_u("rate.unfilled_warning"),
         fg_color=war_fg,
         text_color=war_text,
         corner_radius=8,
@@ -912,7 +907,7 @@ def redact_pr(pr_id):
     def update_values():
         # Checking Values
         if not rpr_name_entry.get():
-            return messagebox.showerror('Error', 'The “Name” field is required', parent=red_property_frm)
+            return messagebox.showerror(lang_u("dialog.error_title"), lang_u("error.name_required"), parent=red_property_frm)
 
         w_list = [rpr_gas_entry.get(), rpr_water_entry.get(), rpr_electricity_entry.get(), rpr_heating_entry.get(),
                   rpr_garbage_entry.get(), rpr_housing_main_entry.get()]
@@ -922,7 +917,7 @@ def redact_pr(pr_id):
             try:
                 float(v)
             except ValueError:
-                return messagebox.showerror('Error', 'Enter the numerical values', parent=red_property_frm)
+                return messagebox.showerror(lang_u("dialog.error_title"), lang_u("error.enter_numeric"), parent=red_property_frm)
 
         new_values = []
         for v in commas_to_dots(w_list):
@@ -948,7 +943,7 @@ def redact_pr(pr_id):
 
         for pv, nv in zip(prev_values, new_values):
             if nv < pv:
-                return messagebox.showerror('Error', 'The new values must be greater than or equal to the previous ones', parent=red_property_frm)
+                return messagebox.showerror(lang_u("dialog.error_title"), lang_u("error.new_values_lower"), parent=red_property_frm)
 
         r_cursor.execute("""INSERT INTO hau_values (pr_id, gas, water, electricity, heating, garbage, housing_main, date) VALUES (?, ?, ?, ?, ?, ?, ?, ?)""",
                          (pr_id, *new_values, str(date.today())))
@@ -957,13 +952,13 @@ def redact_pr(pr_id):
         r_cursor.execute("""SELECT * FROM hau_values WHERE pr_id = ? ORDER BY hau_v_id DESC""", (pr_id,))
         hau_v_id = r_cursor.fetchone()[0]
         r_cursor.execute("""UPDATE properties set (hau_v_id, name, type_id) = (?, ?, ?) WHERE id = ?""",
-                         (hau_v_id, rpr_name_entry.get(), 1 if property_type.get() == 'Flat' else 2, pr_id))
+                         (hau_v_id, rpr_name_entry.get(), property_type.current() + 1, pr_id))
         red_conn.commit()
 
         red_pr.destroy()
         return refresh_cards()
 
-    rpr_update_values_btn = ttk.Button(red_property_frm, text='Update values', command=update_values, style='CustomHelvetica.TButton')
+    rpr_update_values_btn = ttk.Button(red_property_frm, text=lang_u("button.update_values"), command=update_values, style='CustomHelvetica.TButton')
     rpr_update_values_btn.grid(column=0, columnspan=2, row=12, sticky=N, pady=(40, 0))
 
     red_pr.bind("<Control-Z>", lambda e, w=red_pr: close_window(e, w))
@@ -976,7 +971,7 @@ def new_property(_event=None):
     add_property.focus_force()
     add_property.title(lang_u("window.add_property.title", version=c_version))
     add_property.configure(bg="white")
-    add_property.minsize(200, 450)
+    add_property.minsize(500, 450)
     add_property.columnconfigure(0, weight=1)
 
     pr_width, pr_height = 400, 400
@@ -998,7 +993,7 @@ def new_property(_event=None):
     def tariff_for(value_h, up_entry, up_btn):
         tariff_top = tk.Toplevel(root)
         tariff_top.focus_force()
-        tariff_top.title("Hau " + c_version + ' - tariff for ' + value_h)
+        tariff_top.title(lang_u("window.edit_tariff.title", version=c_version, utility=value_h))
         tariff_top.configure(bg="white")
         tariff_top.minsize(250, 200)
         tariff_top.columnconfigure(0, weight=1)
@@ -1012,7 +1007,7 @@ def new_property(_event=None):
         tariff_frm = tk.Frame(tariff_top, bg=white)
         tariff_frm.grid(row=0, column=0)
 
-        s_lbl = tk.Label(tariff_frm, text='Rate per unit:', bg=white, fg=black, font=base14)
+        s_lbl = tk.Label(tariff_frm, text=lang_u("rate.rate_per_unit"), bg=white, fg=black, font=base14)
         s_lbl.grid(row=1, column=0, padx=5, pady=5, sticky='nw')
 
         s_entry = ttk.Entry(tariff_frm, font=base14, foreground=black, background=white, width=5)
@@ -1021,25 +1016,25 @@ def new_property(_event=None):
         c_frame = Frame(tariff_frm, bg='white')
         c_frame.grid(row=3, columnspan=5)
 
-        c_lbl = tk.Label(c_frame, text='First', bg=white, fg=black, font=base14)
+        c_lbl = tk.Label(c_frame, text=lang_u("rate.first"), bg=white, fg=black, font=base14)
         c_lbl.grid(row=0, column=1, padx=5, pady=5)
 
         c_entry = ttk.Entry(c_frame, font=base14, foreground=black, background=white, width=3)
         c_entry.grid(row=0, column=2)
 
-        c2_lbl = tk.Label(c_frame, text='units cost: ', bg=white, fg=black, font=base14)
+        c2_lbl = tk.Label(c_frame, text=lang_u("rate.units_cost"), bg=white, fg=black, font=base14)
         c2_lbl.grid(row=0, column=3, padx=5, pady=5)
 
         c2_entry = ttk.Entry(c_frame, font=base14, foreground=black, background=white, width=3)
         c2_entry.grid(row=0, column=4)
 
-        c3_lbl = tk.Label(c_frame, text='Next', bg=white, fg=black, font=base14)
+        c3_lbl = tk.Label(c_frame, text=lang_u("rate.next"), bg=white, fg=black, font=base14)
         c3_lbl.grid(row=1, column=1, padx=5, pady=5)
 
         c3_entry = ttk.Entry(c_frame, font=base14, foreground=black, background=white, width=3)
         c3_entry.grid(row=1, column=2)
 
-        c4_lbl = tk.Label(c_frame, text='units cost: ', bg=white, fg=black, font=base14)
+        c4_lbl = tk.Label(c_frame, text=lang_u("rate.units_cost"), bg=white, fg=black, font=base14)
         c4_lbl.grid(row=1, column=3, padx=5, pady=5)
 
         c4_entry = ttk.Entry(c_frame, font=base14, foreground=black, background=white, width=3)
@@ -1054,7 +1049,7 @@ def new_property(_event=None):
         setattr(infinity_btn, "is_infinite", False)
         infinity_btn.configure(command=lambda: rest_counting(infinity_btn, c_frame))
 
-        ToolTip(infinity_btn, msg='Use this rate for all units above the previous tiers', delay=1.0)
+        ToolTip(infinity_btn, msg=lang_u("tooltip.remaining_rate"), delay=1.0)
 
         def del_cur(del_btn):
             nonlocal row_t
@@ -1066,7 +1061,7 @@ def new_property(_event=None):
 
                 if info_grid.get('row') == row_t - 1:
                     if isinstance(ch, tk.Label) and ch.cget('text') == '':
-                        ch.config(text='Next')
+                        ch.config(text=lang_u("rate.next"))
 
                     if isinstance(ch, ttk.Entry) and info_grid.get('column') == 1:
                         ch.delete(0, tk.END)
@@ -1112,7 +1107,7 @@ def new_property(_event=None):
 
                 if info.get('row') == cur_row-1:
                     if isinstance(ch, tk.Label) and ch.cget('text') == '':
-                        ch.config(text='Next')
+                        ch.config(text=lang_u("rate.next"))
 
                     if isinstance(ch, ttk.Entry) and info.get('column') == 1:
                         ch.delete(0, tk.END)
@@ -1124,9 +1119,9 @@ def new_property(_event=None):
                         setattr(infinity_btn, "is_infinite", False)
 
             infinity_btn.grid(row=cur_row, column=0, padx=5, pady=5)
-            tk.Label(c_frame, text='Next', bg=white, fg=black, font=base14).grid(row=cur_row, column=1, padx=5, pady=5)
+            tk.Label(c_frame, text=lang_u("rate.next"), bg=white, fg=black, font=base14).grid(row=cur_row, column=1, padx=5, pady=5)
             ttk.Entry(c_frame, font=base14, foreground=black, background=white, width=3).grid(row=cur_row, column=2)
-            tk.Label(c_frame, text='units cost: ', bg=white, fg=black, font=base14).grid(row=cur_row, column=3, padx=5, pady=5)
+            tk.Label(c_frame, text=lang_u("rate.units_cost"), bg=white, fg=black, font=base14).grid(row=cur_row, column=3, padx=5, pady=5)
             ttk.Entry(c_frame, font=base14, foreground=black, background=white, width=3).grid(row=cur_row, column=4)
 
             del_btn = ttk.Button(c_frame, text='X', style='CustomHelvetica.TButton', width=2)
@@ -1137,20 +1132,20 @@ def new_property(_event=None):
             btn.grid_configure(row=row_t)
 
         vs = StringVar()
-        vs.set('Flat')
+        vs.set(lang_u("rate.flat"))
 
-        confirm_rate_btn = ttk.Button(tariff_frm, style='CustomHelvetica.TButton', text='Confirm rate info',
+        confirm_rate_btn = ttk.Button(tariff_frm, style='CustomHelvetica.TButton', text=lang_u("rate.confirm"),
                                       command=lambda v=vs: confirm_rate_info(v, s_entry, c_frame, tariff_frm, tariff_top, next_pr_id, conn, cursor, value_h, up_entry, up_btn, entry_buttons, war_label))
         confirm_rate_btn.grid(row=5, column=0, columnspan=4, sticky='ew', pady=(10, 5), padx=5)
 
-        c_btn = ttk.Button(c_frame, style='CustomHelvetica.TButton', text='Add more')
+        c_btn = ttk.Button(c_frame, style='CustomHelvetica.TButton', text=lang_u("main.add_more"))
         c_btn.grid(row=row_t, column=1, columnspan=4, sticky='ew', pady=(10, 5))
         c_btn.configure(command=lambda b=c_btn: add_more(b))
 
         def flat_or_tiered(v):
             value = v.get()
 
-            if value == 'Flat':
+            if value == lang_u("rate.flat"):
                 s_entry.configure(state='enabled')
                 s_lbl.configure(fg=black)
                 tiered_rate.configure(style='CustomDHelvetica.TRadiobutton')
@@ -1174,10 +1169,10 @@ def new_property(_event=None):
                     except KeyError:
                         pass
 
-        flat_rate = ttk.Radiobutton(tariff_frm, text='Flat rate', style='CustomHelvetica.TRadiobutton', variable=vs, value='Flat', command=lambda v=vs: flat_or_tiered(v))
+        flat_rate = ttk.Radiobutton(tariff_frm, text=lang_u("rate.flat_rate"), style='CustomHelvetica.TRadiobutton', variable=vs, value=lang_u("rate.flat"), command=lambda v=vs: flat_or_tiered(v))
         flat_rate.grid(column=0, row=0, padx=5, pady=5, sticky='w')
 
-        tiered_rate = ttk.Radiobutton(tariff_frm, text='Tiered rate', style='CustomHelvetica.TRadiobutton', variable=vs, value='Tiered', command=lambda v=vs: flat_or_tiered(v))
+        tiered_rate = ttk.Radiobutton(tariff_frm, text=lang_u("rate.tiered_rate"), style='CustomHelvetica.TRadiobutton', variable=vs, value='Tiered', command=lambda v=vs: flat_or_tiered(v))
         tiered_rate.grid(column=0, row=2, padx=5, pady=5, sticky='w')
 
         ToolTip(tiered_rate, msg=note_for_tiered, delay=1.0)
@@ -1190,7 +1185,7 @@ def new_property(_event=None):
         if result_get_v:
             if result_get_v[needed_columns[value_h]]:
                 if not separator in result_get_v[needed_columns[value_h]]:
-                    vs.set('Flat')
+                    vs.set(lang_u("rate.flat"))
                     s_entry.insert(0, result_get_v[needed_columns[value_h]])
 
                 else:
@@ -1204,7 +1199,7 @@ def new_property(_event=None):
 
         flat_or_tiered(vs)
 
-    property_types = ['Flat', 'House']
+    property_types = [lang_u('property.type_flat'), lang_u('property.type_house')]
     property_type = ttk.Combobox(add_property_frm, values=property_types, style='CustomHelvetica.TCombobox', font=base18, state='readonly', justify='center')
     property_type.grid(column=0, row=0, pady=10, columnspan=3)
     property_type.current(0)
@@ -1212,7 +1207,7 @@ def new_property(_event=None):
     name_frm = tk.Frame(add_property_frm, bg=white)
     name_frm.grid(row=1, column=0, sticky='w')
 
-    pr_name = ttk.Label(name_frm, text='Name', style='CustomHelvetica.TLabel')
+    pr_name = ttk.Label(name_frm, text=lang_u("property.name"), style='CustomHelvetica.TLabel')
     pr_name.grid(column=0, row=0, padx=10)
     ttk.Label(name_frm, text='*', foreground='red', background='white', font=("Helvetica", 14)).grid(column=1, row=0)
 
@@ -1220,10 +1215,10 @@ def new_property(_event=None):
     pr_name_entry.grid(column=1, row=1, sticky="e")
     pr_name_entry.focus_force()
 
-    fill_info = ttk.Label(add_property_frm, text='Fill in the current values', font=("Helvetica", 14, 'bold'), foreground='darkgrey', background='white')
+    fill_info = ttk.Label(add_property_frm, text=lang_u("property.fill_current_values"), font=("Helvetica", 14, 'bold'), foreground='darkgrey', background='white')
     fill_info.grid(column=0, row=2, columnspan=2, sticky="w", padx=10)
 
-    pr_gas = ttk.Label(add_property_frm, text='Gas', style='CustomHelvetica.TLabel')
+    pr_gas = ttk.Label(add_property_frm, text=lang_u("utility.gas"), style='CustomHelvetica.TLabel')
     pr_gas.grid(column=0, row=3, sticky="w", padx=10)
 
     pr_gas_entry = ttk.Entry(add_property_frm, font=base14, foreground=black, background=white)
@@ -1233,7 +1228,7 @@ def new_property(_event=None):
     pr_gas_btn.grid(column=2, row=3, sticky="e", padx=10)
     pr_gas_btn.image_name = 'settings_img'
 
-    pr_water = ttk.Label(add_property_frm, text='Water', style='CustomHelvetica.TLabel')
+    pr_water = ttk.Label(add_property_frm, text=lang_u("utility.water"), style='CustomHelvetica.TLabel')
     pr_water.grid(column=0, row=4, sticky="w", padx=10)
 
     pr_water_entry = ttk.Entry(add_property_frm, font=base14, foreground=black, background=white)
@@ -1243,7 +1238,7 @@ def new_property(_event=None):
     pr_water_btn.grid(column=2, row=4, sticky="e", padx=10)
     pr_water_btn.image_name = 'settings_img'
 
-    pr_electricity = ttk.Label(add_property_frm, text='Electricity', style='CustomHelvetica.TLabel')
+    pr_electricity = ttk.Label(add_property_frm, text=lang_u("utility.electricity"), style='CustomHelvetica.TLabel')
     pr_electricity.grid(column=0, row=5, sticky="w", padx=10)
 
     pr_electricity_entry = ttk.Entry(add_property_frm, font=base14, foreground=black, background=white)
@@ -1253,7 +1248,7 @@ def new_property(_event=None):
     pr_electricity_btn.grid(column=2, row=5, sticky="e", padx=10)
     pr_electricity_btn.image_name = 'settings_img'
 
-    pr_heating = ttk.Label(add_property_frm, text='Heating', style='CustomHelvetica.TLabel')
+    pr_heating = ttk.Label(add_property_frm, text=lang_u("utility.heating"), style='CustomHelvetica.TLabel')
     pr_heating.grid(column=0, row=6, sticky="w", padx=10)
 
     pr_heating_entry = ttk.Entry(add_property_frm, font=base14, foreground=black, background=white)
@@ -1263,7 +1258,7 @@ def new_property(_event=None):
     pr_heating_btn.grid(column=2, row=6, sticky="e", padx=10)
     pr_heating_btn.image_name = 'settings_img'
 
-    pr_garbage = ttk.Label(add_property_frm, text='Garbage', style='CustomHelvetica.TLabel')
+    pr_garbage = ttk.Label(add_property_frm, text=lang_u("utility.garbage"), style='CustomHelvetica.TLabel')
     pr_garbage.grid(column=0, row=7, sticky="w", padx=10)
 
     pr_garbage_entry = ttk.Entry(add_property_frm, font=base14, foreground=black, background=white)
@@ -1273,7 +1268,7 @@ def new_property(_event=None):
     pr_garbage_btn.grid(column=2, row=7, sticky="e", padx=10)
     pr_garbage_btn.image_name = 'settings_img'
 
-    pr_housing_main_label = ttk.Label(add_property_frm, text='HOA fee', style='CustomHelvetica.TLabel')
+    pr_housing_main_label = ttk.Label(add_property_frm, text=lang_u("utility.housing_main"), style='CustomHelvetica.TLabel')
     pr_housing_main_label.grid(column=0, row=8, sticky="w", padx=10)
 
     pr_housing_main_entry = ttk.Entry(add_property_frm, font=base14, foreground=black, background=white)
@@ -1295,7 +1290,7 @@ def new_property(_event=None):
 
     war_label = ctk.CTkLabel(
         add_property_frm,
-        text="You have unfilled rates",
+        text=lang_u("rate.unfilled_warning"),
         fg_color=war_fg,
         text_color=war_text,
         corner_radius=8,
@@ -1314,7 +1309,7 @@ def new_property(_event=None):
     def add_record():
         # Checking Values
         if not pr_name_entry.get():
-            return messagebox.showerror('Error', 'The “Name” field is required', parent=add_property_frm)
+            return messagebox.showerror(lang_u("dialog.error_title"), lang_u("error.name_required"), parent=add_property_frm)
 
         w_list = [pr_gas_entry.get(), pr_water_entry.get(), pr_electricity_entry.get(), pr_heating_entry.get(),
                   pr_garbage_entry.get(), pr_housing_main_entry.get()]
@@ -1324,7 +1319,7 @@ def new_property(_event=None):
             try:
                 float(v)
             except ValueError:
-                return messagebox.showerror('Error', 'Enter the numerical values', parent=add_property_frm)
+                return messagebox.showerror(lang_u("dialog.error_title"), lang_u("error.enter_numeric"), parent=add_property_frm)
 
         # Adding Values
         with sqlite3.connect(DB_PATH) as add_sql_conn:
@@ -1341,13 +1336,13 @@ def new_property(_event=None):
         with sqlite3.connect(DB_PATH) as pr_add_sql_conn:
                 add_cursor = pr_add_sql_conn.cursor()
                 add_cursor.execute("""INSERT INTO properties (name, type_id, hau_v_id) VALUES (?, ?, ?)""",
-                                   (pr_name_entry.get(), 1 if property_type.get() == 'Flat' else 2, lat_hau_id()))
+                                   (pr_name_entry.get(), property_type.current() + 1, lat_hau_id()))
 
         conn.commit()
         add_property.destroy()
         return refresh_cards()
 
-    add_pr_btn = ttk.Button(add_property_frm, width=15, text='Add Property', style='CustomHelvetica.TButton', command=add_record)
+    add_pr_btn = ttk.Button(add_property_frm, width=15, text=lang_u("button.add_property"), style='CustomHelvetica.TButton', command=add_record)
     add_pr_btn.grid(column=0, row=12, columnspan=3, sticky='N', padx=5, pady=20)
 
     add_property.bind("<Control-Z>", lambda e, w=add_property: close_window(e, w))
