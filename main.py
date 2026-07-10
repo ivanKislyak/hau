@@ -12,6 +12,9 @@ from PIL import Image, ImageTk
 import json
 from logic import to_number, calc_tiered_payment, commas_to_dots
 
+# Current version
+c_version = '(0.5)'
+
 # DB
 BASE_DIR = Path(__file__).resolve().parent
 
@@ -28,6 +31,22 @@ def db():
             cursor = sql_conn.cursor()
             cursor.executescript(sql_script.read())
 
+# Useful dicts
+needed_columns = {
+    'gas': 2,
+    'water': 3,
+    'electricity': 4,
+    'heating': 5,
+    'garbage': 6,
+    'housing_main': 7
+}
+
+lang_dict = {
+    'English': 'en',
+    'Русский': 'ru',
+    'Қазақ': 'kz'
+}
+
 # Available languages: en, ru, kz
 LANG = "en"
 
@@ -37,9 +56,6 @@ with open(LANG_PATH, "r", encoding="utf-8") as f:
 def lang_u(key: str, **kwargs) -> str:
     text = C_LANG.get(LANG, C_LANG["en"]).get(key, C_LANG["en"].get(key, key))
     return text.format(**kwargs)
-
-# Current version
-c_version = '(0.5)'
 
 # App
 root = tk.Tk()
@@ -57,18 +73,19 @@ x = (screen_width - width) // 2
 y = (screen_height - height) // 2
 root.geometry(f"{width}x{height}+{x}+{y}")
 
-def resize_img(img, a, b):
-    return img.resize((a, b))
+def return_image(img_name: str, i_width: int, i_height: int) -> ImageTk.PhotoImage:
+    return ImageTk.PhotoImage(Image.open(ICONS_PATH / img_name).resize((i_width, i_height)))
 
-pencil_img = ImageTk.PhotoImage(resize_img(Image.open(ICONS_PATH / 'pencil1.png'), 20, 20))
-trash_img = ImageTk.PhotoImage(resize_img(Image.open(ICONS_PATH / 'trash.png'), 20, 20))
-house_img = ImageTk.PhotoImage(resize_img(Image.open(ICONS_PATH / 'house.png'), 25, 20))
-apartment_img = ImageTk.PhotoImage(resize_img(Image.open(ICONS_PATH / 'apartment.png'), 15, 22))
-settings_img = ImageTk.PhotoImage(resize_img(Image.open(ICONS_PATH / 'settings.png'), 20, 19))
-settings_w_img = ImageTk.PhotoImage(resize_img(Image.open(ICONS_PATH / 'settings_w_r.png'), 20, 19))
-settings_wt_img = ImageTk.PhotoImage(resize_img(Image.open(ICONS_PATH / 'settings_wt_r.png'), 20, 19))
-infinity_img = ImageTk.PhotoImage(resize_img(Image.open(ICONS_PATH / 'infinity.png'), 22, 13))
-return_img = ImageTk.PhotoImage(resize_img(Image.open(ICONS_PATH / 'return.png'), 20, 20))
+pencil_img = return_image('pencil1.png', 20, 20)
+trash_img = return_image('trash.png', 20, 20)
+house_img = return_image('house.png', 25, 20)
+apartment_img = return_image("apartment.png", 15, 22)
+settings_img = return_image("settings.png", 20, 19)
+settings_w_img = return_image("settings_w_r.png", 20, 19)
+settings_wt_img = return_image("settings_wt.png", 20, 19)
+infinity_img = return_image("infinity.png", 22, 13)
+return_img = return_image("return.png", 20, 20)
+profile_img = return_image("profile_settings.png", 20, 20)
 
 # Colors
 dp_sea = '#11384D'
@@ -133,16 +150,6 @@ style.configure(
     background=white,
     font=base14
 )
-
-# Useful dicts
-needed_columns = {
-    'gas': 2,
-    'water': 3,
-    'electricity': 4,
-    'heating': 5,
-    'garbage': 6,
-    'housing_main': 7
-}
 
 # Useful notes
 note_for_tiered = lang_u("tooltip.tiered_note")
@@ -359,8 +366,8 @@ def rest_counting(btn, cc_frame):
 
                 if isinstance(ch, ttk.Entry) and info.get('column') == 2:
                     ch.delete(0, tk.END)
-                    ch.grid(column=1, columnspan=2)
-                    ch.configure(width=9)
+                    ch.grid(column=1, columnspan=2, sticky='e')
+                    ch.configure(width=8)
                     ch.insert(0, lang_u("rate.remaining"))
 
     else:
@@ -410,7 +417,7 @@ def refresh_cards() -> None:
 
         if not cursor.fetchall():
             main_label = ttk.Label(canvas_fr, text=lang_u("main.no_properties"), font=base_bold18, foreground=dp_sea, justify='center')
-            main_label.configure(background=white, width=25)
+            main_label.configure(background=white)
             main_label.grid(column=0, row=0, pady=(75, 0))
 
             lets_add_btn = ttk.Button(canvas_fr, text=lang_u("main.lets_add"), command=new_property, style='CustomHelvetica.TButton')
@@ -777,8 +784,8 @@ def redact_pr(pr_id):
                                         ch.config(text='')
 
                                     if isinstance(ch, ttk.Entry) and info.get('column') == 2:
-                                        ch.grid(column=1, columnspan=2)
-                                        ch.configure(width=9)
+                                        ch.grid(column=1, columnspan=2, sticky='e')
+                                        ch.configure(width=8)
 
                             infinity_btn.grid(row=row, column=0, padx=5, pady=5)
                             infinity_btn.configure(image=return_img)
