@@ -8,6 +8,12 @@
   },
   "en": {
     "app.title": "Hau {version}",
+
+    "onboarding.welcome": "Welcome to Hau",
+    "onboarding.choose_language": "Choose your language",
+    "onboarding.language_hint": "You can change it later in Settings",
+    "button.next": "Next",
+
     "window.add_property.title": "Hau {version} - adding property",
     "window.edit_property.title": "Updating values for {property_name}",
     "window.add_tariff.title": "Hau {version} - tariff for {utility}",
@@ -59,6 +65,12 @@
   },
   "ru": {
     "app.title": "Hau {version}",
+
+    "onboarding.welcome": "Добро пожаловать в Hau",
+    "onboarding.choose_language": "Выберите язык",
+    "onboarding.language_hint": "Позже язык можно изменить в настройках",
+    "button.next": "Далее",
+
     "window.add_property.title": "Hau {version} — добавление объекта",
     "window.edit_property.title": "Обновление показаний: {property_name}",
     "window.add_tariff.title": "Hau {version} — тариф для: {utility}",
@@ -110,6 +122,12 @@
   },
   "kz": {
     "app.title": "Hau {version}",
+
+    "onboarding.welcome": "Hau қолданбасына қош келдіңіз",
+    "onboarding.choose_language": "Тілді таңдаңыз",
+    "onboarding.language_hint": "Тілді кейін баптаулардан өзгертуге болады",
+    "button.next": "Әрі қарай",
+
     "window.add_property.title": "Hau {version} — нысан қосу",
     "window.edit_property.title": "Көрсеткіштерді жаңарту: {property_name}",
     "window.add_tariff.title": "Hau {version} — {utility} үшін тариф",

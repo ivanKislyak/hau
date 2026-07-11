@@ -306,32 +306,20 @@ def confirm_rate_info(v: StringVar, s_entry, c_frame, tariff_frm, tariff_top, n_
 
 
     elif v.get() == 'Tiered':
-
         insert_value = [
-
             str(pos_inf) if er_ch.get() == lang_u("rate.remaining") else er_ch.get().replace(',', '.', 1)
-
             for er_ch in c_frame.winfo_children()
-
             if isinstance(er_ch, ttk.Entry)
-
         ]
 
         for val in insert_value:
-
             if not val:
                 messagebox.showerror(lang_u("dialog.error_title"), lang_u("error.all_fields_required"), parent=tariff_frm)
-
                 return None
-
             try:
-
                 float(val)
-
             except ValueError:
-
                 messagebox.showerror(lang_u("dialog.error_title"), lang_u("error.enter_numeric"), parent=tariff_frm)
-
                 return None
 
         insert_value = separator.join(insert_value)
