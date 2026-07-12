@@ -472,8 +472,45 @@ def choose_lang_frame():
                                variable=cl, value='kz', command=lambda v=cl: set_lang(v.get(), main_label, next_btn))
     kz_r_btn.grid(column=0, row=3, padx=5, pady=5)
 
-    next_btn = ttk.Button(canvas_fr, text=lang_u("button.next"), command=refresh_cards,
+    next_btn = ttk.Button(canvas_fr, text=lang_u("button.next"), command=choose_currency,
                               style='CustomHelvetica.TButton')
+
+def choose_currency():
+    for ch in canvas_fr.winfo_children():
+        ch.destroy()
+
+    main_label = ttk.Label(canvas_fr, text=lang_u("onboarding.preferred_currency"), font=base_bold18, foreground=dp_sea,
+                           justify='center')
+    main_label.configure(background=white)
+    main_label.grid(column=0, row=0, pady=(75, 0))
+
+    ask_label = ttk.Label(canvas_fr, text=lang_u("onboarding.currency_tooltip"), font=base14, foreground=black,
+                           justify='left')
+    ask_label.configure(background=white)
+    ask_label.grid(column=0, row=1, pady=(20, 5))
+
+    property_types = [lang_u('combobox.currency_usd'), lang_u('combobox.currency_rub'), lang_u('combobox.currency_kzt')]
+    property_type = ttk.Combobox(canvas_fr, values=property_types, style='CustomHelvetica.TCombobox',
+                                 font=base18, state='readonly', justify='center')
+    property_type.grid(column=0, row=2, pady=10, columnspan=3)
+
+    try:
+        locale.setlocale(locale.LC_ALL, '')
+        system_lang, _ = locale.getlocale()
+    except locale.Error:
+        system_lang = None
+
+    if system_lang and system_lang.startswith('ru'):
+        property_type.current(1)
+    elif system_lang and system_lang.startswith('kk'):
+        property_type.current(2)
+    else:
+        property_type.current(0)
+
+    next_btn_to_language = ttk.Button(canvas_fr, text=lang_u("button.next"), command=choose_lang_frame,
+                              style='CustomHelvetica.TButton')
+    next_btn_to_language.configure(text=lang_u("button.next"))
+    next_btn_to_language.grid(column=0, row=4)
 
 # Loading real estate listings on the home screen
 def refresh_cards() -> None:
