@@ -13,7 +13,7 @@ import json
 from logic import to_number, calc_tiered_payment, commas_to_dots
 
 # Current version
-c_version = '(0.5)'
+c_version = '(0.6)'
 
 # DB
 BASE_DIR = Path(__file__).resolve().parent
@@ -25,11 +25,10 @@ LANG_PATH = BASE_DIR / "lang.json"
 
 DB_PATH.parent.mkdir(exist_ok=True)
 
-def db():
-    with sqlite3.connect(DB_PATH) as sql_conn:
-        with open(SCHEMA_PATH, 'r', encoding='utf-8', newline='') as sql_script:
-            cursor = sql_conn.cursor()
-            cursor.executescript(sql_script.read())
+with sqlite3.connect(DB_PATH) as db_sql_conn:
+    with open(SCHEMA_PATH, 'r', encoding='utf-8', newline='') as sql_script:
+        db_cursor = db_sql_conn.cursor()
+        db_cursor.executescript(sql_script.read())
 
 # Useful dicts
 needed_columns = {
@@ -47,14 +46,25 @@ lang_dict = {
     'Қазақ': 'kz'
 }
 
-# Available languages: en, ru, kz
-LANG = "en"
+def choose_lang() -> None | str:
+    choose_lang_conn = sqlite3.connect(DB_PATH)
+    choose_lang_cursor = choose_lang_conn.cursor()
+    choose_lang_cursor.execute("""SELECT * FROM user_settings""")
+    u_settings = choose_lang_cursor.fetchone()
 
+    chosen_lang = u_settings[1] if u_settings else None
+
+    if not chosen_lang:
+        return 'en'
+    else:
+        return chosen_lang
+
+# Available languages: en, ru, kz
 with open(LANG_PATH, "r", encoding="utf-8") as f:
     C_LANG = json.load(f)
 
 def lang_u(key: str, **kwargs) -> str:
-    text = C_LANG.get(LANG, C_LANG["en"]).get(key, C_LANG["en"].get(key, key))
+    text = C_LANG.get(choose_lang(), C_LANG["en"]).get(key, C_LANG["en"].get(key, key))
     return text.format(**kwargs)
 
 # App
@@ -82,7 +92,7 @@ house_img = return_image('house.png', 25, 20)
 apartment_img = return_image("apartment.png", 15, 22)
 settings_img = return_image("settings.png", 20, 19)
 settings_w_img = return_image("settings_w_r.png", 20, 19)
-settings_wt_img = return_image("settings_wt.png", 20, 19)
+settings_wt_img = return_image("settings_wt_r.png", 20, 19)
 infinity_img = return_image("infinity.png", 22, 13)
 return_img = return_image("return.png", 20, 20)
 profile_img = return_image("profile_settings.png", 20, 20)
@@ -374,6 +384,60 @@ def rest_counting(btn, cc_frame):
                     ch.grid(column=2, columnspan=1)
                     ch.configure(width=3)
 
+def check_for_new_user():
+    check_conn = sqlite3.connect(DB_PATH)
+    check_cursor = check_conn.cursor()
+    check_cursor.execute("""SELECT * FROM user_settings""")
+    settings_values = check_cursor.fetchone()
+
+    if not settings_values:
+        return False
+    else:
+        return True
+
+def set_lang(lang_v, label, btn):
+    set_lang_conn = sqlite3.connect(DB_PATH)
+    set_lang_cursor = set_lang_conn.cursor()
+
+    if check_for_new_user():
+        set_lang_cursor.execute("""UPDATE user_settings set language = ?""", (lang_v,))
+        set_lang_conn.commit()
+
+    else:
+        set_lang_cursor.execute("""INSERT INTO user_settings (language) VALUES (?)""", (lang_v,))
+        set_lang_conn.commit()
+
+    label.configure(text=lang_u("onboarding.choose_language"))
+    btn.configure(text=lang_u("button.next"))
+    btn.grid(column=0, row=4)
+
+def choose_username_frame():
+    for ch in canvas_fr.winfo_children():
+        ch.destroy()
+
+def choose_lang_frame():
+    cl = StringVar()
+
+    main_label = ttk.Label(canvas_fr, text=lang_u("onboarding.choose_language"), font=base_bold18, foreground=dp_sea,
+                           justify='center')
+    main_label.configure(background=white)
+    main_label.grid(column=0, row=0, pady=(75, 0))
+
+    eng_r_btn = ttk.Radiobutton(canvas_fr, text='English', style='CustomHelvetica.TRadiobutton',
+                                variable=cl, value='en', command=lambda v=cl: set_lang(v.get(), main_label, lets_add_btn))
+    eng_r_btn.grid(column=0, row=1, padx=5, pady=5)
+
+    ru_r_btn = ttk.Radiobutton(canvas_fr, text='Русский', style='CustomHelvetica.TRadiobutton',
+                               variable=cl, value='ru', command=lambda v=cl: set_lang(v.get(), main_label, lets_add_btn))
+    ru_r_btn.grid(column=0, row=2, padx=5, pady=5)
+
+    kz_r_btn = ttk.Radiobutton(canvas_fr, text='Қазақ', style='CustomHelvetica.TRadiobutton',
+                               variable=cl, value='kz', command=lambda v=cl: set_lang(v.get(), main_label, lets_add_btn))
+    kz_r_btn.grid(column=0, row=3, padx=5, pady=5)
+
+    lets_add_btn = ttk.Button(canvas_fr, text=lang_u("button.next"), command=refresh_cards,
+                              style='CustomHelvetica.TButton')
+
 # Loading real estate listings on the home screen
 def refresh_cards() -> None:
     """
@@ -403,117 +467,120 @@ def refresh_cards() -> None:
         cursor = sql_conn.cursor()
         cursor.execute("""SELECT * FROM properties""")
 
-        if not cursor.fetchall():
-            main_label = ttk.Label(canvas_fr, text=lang_u("main.no_properties"), font=base_bold18, foreground=dp_sea, justify='center')
-            main_label.configure(background=white)
-            main_label.grid(column=0, row=0, pady=(75, 0))
-
-            lets_add_btn = ttk.Button(canvas_fr, text=lang_u("main.lets_add"), command=new_property, style='CustomHelvetica.TButton')
-            lets_add_btn.grid(column=0, row=1)
-
-            root.bind("<Return>", new_property)
+        if not check_for_new_user():
+            choose_lang_frame()
         else:
-            main_label = ttk.Label(canvas_fr, text=lang_u("main.your_properties"), font=base_bold18, foreground=dp_sea)
-            main_label.configure(background=white)
-            main_label.grid(column=0, row=1, sticky=NS)
+            if not cursor.fetchall():
+                main_label = ttk.Label(canvas_fr, text=lang_u("main.no_properties"), font=base_bold18, foreground=dp_sea, justify='center')
+                main_label.configure(background=white)
+                main_label.grid(column=0, row=0, pady=(75, 0))
 
-            # Cards of properties
-            with sqlite3.connect(DB_PATH) as sql_conn3:
-                cursor = sql_conn3.cursor()
-                cursor.execute("""SELECT * FROM properties""")
-                card_row = 2
+                lets_add_btn = ttk.Button(canvas_fr, text=lang_u("main.lets_add"), command=new_property, style='CustomHelvetica.TButton')
+                lets_add_btn.grid(column=0, row=1)
 
-                for properties in cursor.fetchall():
-                    cursor.execute("""SELECT * FROM hau_values WHERE hau_v_id = ?""", (properties[3],))
-                    hau_values = cursor.fetchall()
-                    card_fr = tk.Frame(canvas_fr, relief="solid", background='white', border=1, pady=10)
-                    card_fr.grid(column=0, row=card_row, padx=5, pady=5)
-                    card_fr.grid_columnconfigure(0, minsize=400)
-                    card_fr.configure(width=400)
+                root.bind("<Return>", new_property)
+            else:
+                main_label = ttk.Label(canvas_fr, text=lang_u("main.your_properties"), font=base_bold18, foreground=dp_sea)
+                main_label.configure(background=white)
+                main_label.grid(column=0, row=1, sticky=NS)
 
-                    name_lb = ttk.Label(card_fr, text=properties[1], style='CustomHelvetica14.TLabel', justify='center', image=house_img if properties[2] == 2 else apartment_img, compound="left")
-                    name_lb.grid(row=0, column=0, columnspan=3, pady=3)
+                # Cards of properties
+                with sqlite3.connect(DB_PATH) as sql_conn3:
+                    cursor = sql_conn3.cursor()
+                    cursor.execute("""SELECT * FROM properties""")
+                    card_row = 2
 
-                    type_text = lang_u("property.category_flat") if properties[2] == 1 else lang_u("property.category_house")
+                    for properties in cursor.fetchall():
+                        cursor.execute("""SELECT * FROM hau_values WHERE hau_v_id = ?""", (properties[3],))
+                        hau_values = cursor.fetchall()
+                        card_fr = tk.Frame(canvas_fr, relief="solid", background='white', border=1, pady=10)
+                        card_fr.grid(column=0, row=card_row, padx=5, pady=5)
+                        card_fr.grid_columnconfigure(0, minsize=400)
+                        card_fr.configure(width=400)
 
-                    type_lb = ttk.Label(card_fr, text=type_text, style='CustomHelvetica14.TLabel')
-                    type_lb.grid(row=1, column=0, sticky=W, padx=(10, 0))
+                        name_lb = ttk.Label(card_fr, text=properties[1], style='CustomHelvetica14.TLabel', justify='center', image=house_img if properties[2] == 2 else apartment_img, compound="left")
+                        name_lb.grid(row=0, column=0, columnspan=3, pady=3)
 
-                    utility_names = [lang_u("utility.gas"), lang_u("utility.water"), lang_u("utility.electricity"), lang_u("utility.heating"), lang_u("utility.garbage"), lang_u("utility.housing_main")]
-                    req_values = hau_values[0][2:]
-                    rcount = 2
+                        type_text = lang_u("property.category_flat") if properties[2] == 1 else lang_u("property.category_house")
 
-                    for name, value in zip(utility_names, req_values):
-                        if value:
-                            txt = f'{name}: {value}'
-                            ttk.Label(card_fr, text=txt, style='CustomHelvetica14.TLabel').grid(row=rcount, column=0, sticky=W, padx=(10, 0))
-                            rcount += 1
+                        type_lb = ttk.Label(card_fr, text=type_text, style='CustomHelvetica14.TLabel')
+                        type_lb.grid(row=1, column=0, sticky=W, padx=(10, 0))
 
-                    cursor.execute("""SELECT * FROM hau_values WHERE hau_v_id = ?""", (hau_values[0][0],))
-                    res = lang_u("property.last_update", date=cursor.fetchone()[-1])
-                    Label(card_fr, text=res, bg=white, fg='grey').grid(row=rcount, column=0, sticky=W, padx=(10, 0), pady=(15, 0))
+                        utility_names = [lang_u("utility.gas"), lang_u("utility.water"), lang_u("utility.electricity"), lang_u("utility.heating"), lang_u("utility.garbage"), lang_u("utility.housing_main")]
+                        req_values = hau_values[0][2:]
+                        rcount = 2
 
-                    if not properties[4]:
-                        cursor.execute("""SELECT * FROM tariffs WHERE pr_id = ?""",
-                                       (properties[0],))
-                        tariff_row = cursor.fetchone()
+                        for name, value in zip(utility_names, req_values):
+                            if value:
+                                txt = f'{name}: {value}'
+                                ttk.Label(card_fr, text=txt, style='CustomHelvetica14.TLabel').grid(row=rcount, column=0, sticky=W, padx=(10, 0))
+                                rcount += 1
 
-                        if tariff_row is None:
-                            tariffs = (0, 0, 0, 0, 0, 0)
-                        else:
-                            tariffs = tariff_row[2:]
+                        cursor.execute("""SELECT * FROM hau_values WHERE hau_v_id = ?""", (hau_values[0][0],))
+                        res = lang_u("property.last_update", date=cursor.fetchone()[-1])
+                        Label(card_fr, text=res, bg=white, fg='grey').grid(row=rcount, column=0, sticky=W, padx=(10, 0), pady=(15, 0))
 
-                        cursor.execute("""SELECT * FROM hau_values WHERE pr_id = ? ORDER BY hau_v_id DESC""",
-                                       (properties[0],))
-                        values = cursor.fetchall()
-                        current_values = values[0][2:8]
+                        if not properties[4]:
+                            cursor.execute("""SELECT * FROM tariffs WHERE pr_id = ?""",
+                                           (properties[0],))
+                            tariff_row = cursor.fetchone()
 
-                        try:
-                            prev_values = values[1][2:8]
-                        except IndexError:
-                            prev_values = (0, 0, 0, 0, 0, 0)
-
-                        calc_res = 0
-
-                        for cv, pv, t in zip(current_values, prev_values, tariffs):
-                            cv = to_number(cv)
-                            pv = to_number(pv)
-                            t = to_number(t)
-
-                            units = (cv if pv else 0) - pv
-
-                            if units <= 0 or not t:
-                                continue
-
-                            if isinstance(t, (int, float)):
-                                calc_res += units * t
+                            if tariff_row is None:
+                                tariffs = (0, 0, 0, 0, 0, 0)
                             else:
-                                calc_res += calc_tiered_payment(units, t)
+                                tariffs = tariff_row[2:]
 
-                        calc_res_lbl = Label(card_fr, text=lang_u("property.payment", amount=calc_res) if calc_res else None, bg=white, fg='green', font=base14)
-                        calc_res_lbl.grid(row=rcount, column=2, sticky=E, padx=(0, 10), pady=(15, 0))
+                            cursor.execute("""SELECT * FROM hau_values WHERE pr_id = ? ORDER BY hau_v_id DESC""",
+                                           (properties[0],))
+                            values = cursor.fetchall()
+                            current_values = values[0][2:8]
 
-                    def del_pr(pr_id):
-                        am = messagebox.askquestion(lang_u("dialog.delete_title"), lang_u("dialog.delete_message"))
-                        if am == 'yes':
-                            yes_del(pr_id)
+                            try:
+                                prev_values = values[1][2:8]
+                            except IndexError:
+                                prev_values = (0, 0, 0, 0, 0, 0)
 
-                    new_hau_v = ttk.Button(card_fr, style='CustomHelvetica.TButton', command=lambda vp=properties[0]: redact_pr(vp), image=pencil_img, compound="center")
-                    new_hau_v.grid(column=2, row=(rcount // 2)-1, sticky='e', padx=(0, 20))
-                    new_hau_v.configure(width=2)
-                    ToolTip(new_hau_v, msg=lang_u("tooltip.update_values"), delay=1.0)
+                            calc_res = 0
 
-                    del_pr_btn = ttk.Button(card_fr, style='CustomHelvetica.TButton', command=lambda vp=properties[0]: del_pr(vp), image=trash_img)
-                    del_pr_btn.grid(column=2, row=(rcount // 2)+1, sticky='e', padx=(0, 20))
-                    del_pr_btn.configure(width=2)
-                    ToolTip(del_pr_btn, msg=lang_u("tooltip.delete_property"), delay=1.0)
+                            for cv, pv, t in zip(current_values, prev_values, tariffs):
+                                cv = to_number(cv)
+                                pv = to_number(pv)
+                                t = to_number(t)
 
-                    card_row +=1
+                                units = (cv if pv else 0) - pv
 
-            lets_add_btn = ttk.Button(canvas_fr, text=lang_u("main.add_more"), command=new_property, style='CustomHelvetica.TButton')
-            lets_add_btn.grid(column=0, row=card_row, sticky=NS, pady=10, padx=10)
+                                if units <= 0 or not t:
+                                    continue
 
-            root.bind('<Return>', new_property)
+                                if isinstance(t, (int, float)):
+                                    calc_res += units * t
+                                else:
+                                    calc_res += calc_tiered_payment(units, t)
+
+                            calc_res_lbl = Label(card_fr, text=lang_u("property.payment", amount=calc_res) if calc_res else None, bg=white, fg='green', font=base14)
+                            calc_res_lbl.grid(row=rcount, column=2, sticky=E, padx=(0, 10), pady=(15, 0))
+
+                        def del_pr(pr_id):
+                            am = messagebox.askquestion(lang_u("dialog.delete_title"), lang_u("dialog.delete_message"))
+                            if am == 'yes':
+                                yes_del(pr_id)
+
+                        new_hau_v = ttk.Button(card_fr, style='CustomHelvetica.TButton', command=lambda vp=properties[0]: redact_pr(vp), image=pencil_img, compound="center")
+                        new_hau_v.grid(column=2, row=(rcount // 2)-1, sticky='e', padx=(0, 20))
+                        new_hau_v.configure(width=2)
+                        ToolTip(new_hau_v, msg=lang_u("tooltip.update_values"), delay=1.0)
+
+                        del_pr_btn = ttk.Button(card_fr, style='CustomHelvetica.TButton', command=lambda vp=properties[0]: del_pr(vp), image=trash_img)
+                        del_pr_btn.grid(column=2, row=(rcount // 2)+1, sticky='e', padx=(0, 20))
+                        del_pr_btn.configure(width=2)
+                        ToolTip(del_pr_btn, msg=lang_u("tooltip.delete_property"), delay=1.0)
+
+                        card_row +=1
+
+                lets_add_btn = ttk.Button(canvas_fr, text=lang_u("main.add_more"), command=new_property, style='CustomHelvetica.TButton')
+                lets_add_btn.grid(column=0, row=card_row, sticky=NS, pady=10, padx=10)
+
+                root.bind('<Return>', new_property)
 
 def redact_pr(pr_id):
     red_conn = sqlite3.connect(DB_PATH)
@@ -727,7 +794,7 @@ def redact_pr(pr_id):
                     except KeyError:
                         pass
 
-        flat_rate = ttk.Radiobutton(tariff_frm, text=lang_u("rate.flat_rate"), style='CustomHelvetica.TRadiobutton', variable=vs, value=lang_u("rate.flat"), command=lambda v=vs: flat_or_tiered(v))
+        flat_rate = ttk.Radiobutton(tariff_frm, text=lang_u("rate.flat_rate"), style='CustomHelvetica.TRadiobutton', variable=vs, value='Flat', command=lambda v=vs: flat_or_tiered(v))
         flat_rate.grid(column=0, row=0, padx=5, pady=5, sticky='w')
 
         tiered_rate = ttk.Radiobutton(tariff_frm, text=lang_u("rate.tiered_rate"), style='CustomHelvetica.TRadiobutton', variable=vs, value='Tiered', command=lambda v=vs: flat_or_tiered(v))
@@ -743,7 +810,7 @@ def redact_pr(pr_id):
         if result_get_v:
             if result_get_v[needed_columns[value_h]]:
                 if not separator in result_get_v[needed_columns[value_h]]:
-                    vs.set(lang_u("rate.flat"))
+                    vs.set('Flat')
                     s_entry.insert(0, result_get_v[needed_columns[value_h]])
                 else:
                     vs.set('Tiered')
@@ -1128,7 +1195,7 @@ def new_property(_event=None):
             btn.grid_configure(row=row_t)
 
         vs = StringVar()
-        vs.set(lang_u("rate.flat"))
+        vs.set('Flat')
 
         confirm_rate_btn = ttk.Button(tariff_frm, style='CustomHelvetica.TButton', text=lang_u("rate.confirm"),
                                       command=lambda v=vs: confirm_rate_info(v, s_entry, c_frame, tariff_frm, tariff_top, next_pr_id, conn, cursor, value_h, up_entry, up_btn, entry_buttons, war_label))
@@ -1141,7 +1208,7 @@ def new_property(_event=None):
         def flat_or_tiered(v):
             value = v.get()
 
-            if value == lang_u("rate.flat"):
+            if value == 'Flat':
                 s_entry.configure(state='enabled')
                 s_lbl.configure(fg=black)
                 tiered_rate.configure(style='CustomDHelvetica.TRadiobutton')
@@ -1165,7 +1232,7 @@ def new_property(_event=None):
                     except KeyError:
                         pass
 
-        flat_rate = ttk.Radiobutton(tariff_frm, text=lang_u("rate.flat_rate"), style='CustomHelvetica.TRadiobutton', variable=vs, value=lang_u("rate.flat"), command=lambda v=vs: flat_or_tiered(v))
+        flat_rate = ttk.Radiobutton(tariff_frm, text=lang_u("rate.flat_rate"), style='CustomHelvetica.TRadiobutton', variable=vs, value='Flat', command=lambda v=vs: flat_or_tiered(v))
         flat_rate.grid(column=0, row=0, padx=5, pady=5, sticky='w')
 
         tiered_rate = ttk.Radiobutton(tariff_frm, text=lang_u("rate.tiered_rate"), style='CustomHelvetica.TRadiobutton', variable=vs, value='Tiered', command=lambda v=vs: flat_or_tiered(v))
@@ -1181,7 +1248,7 @@ def new_property(_event=None):
         if result_get_v:
             if result_get_v[needed_columns[value_h]]:
                 if not separator in result_get_v[needed_columns[value_h]]:
-                    vs.set(lang_u("rate.flat"))
+                    vs.set('Flat')
                     s_entry.insert(0, result_get_v[needed_columns[value_h]])
 
                 else:
@@ -1354,6 +1421,5 @@ def yes_del(pr_id):
     refresh_cards()
 
 if __name__ == '__main__':
-    db()
     refresh_cards()
     root.mainloop()

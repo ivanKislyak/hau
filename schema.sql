@@ -1,7 +1,8 @@
 CREATE TABLE IF NOT EXISTS "user_settings" (
     "name" TEXT,
     "language" TEXT,
-    "currency" TEXT
+    "currency" TEXT,
+    "is_new" INTEGER
 );
 
 CREATE TABLE IF NOT EXISTS "hau_values" (

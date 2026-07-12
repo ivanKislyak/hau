@@ -11,6 +11,7 @@
 
     "onboarding.welcome": "Welcome to Hau",
     "onboarding.choose_language": "Choose your language",
+    "onboarding.language": "English",
     "onboarding.language_hint": "You can change it later in Settings",
     "button.next": "Next",
 
@@ -68,6 +69,7 @@
 
     "onboarding.welcome": "Добро пожаловать в Hau",
     "onboarding.choose_language": "Выберите язык",
+    "onboarding.language": "Русский",
     "onboarding.language_hint": "Позже язык можно изменить в настройках",
     "button.next": "Далее",
 
@@ -79,7 +81,7 @@
     "main.lets_add": "Добавить первый объект",
     "main.your_properties": "Ваши объекты:",
     "main.add_more": "Добавить ещё",
-    "property.category_flat": "Категория: квартира",
+    "property.category_flat": "Категория: Квартира",
     "property.category_house": "Категория: дом",
     "property.type_flat": "Квартира",
     "property.type_house": "Дом",
@@ -125,6 +127,7 @@
 
     "onboarding.welcome": "Hau қолданбасына қош келдіңіз",
     "onboarding.choose_language": "Тілді таңдаңыз",
+    "onboarding.language": "Қазақ",
     "onboarding.language_hint": "Тілді кейін баптаулардан өзгертуге болады",
     "button.next": "Әрі қарай",
 
