@@ -10,6 +10,9 @@
     "app.title": "Hau {version}",
 
     "onboarding.welcome": "Welcome to Hau",
+    "onboarding.ask_name": "What should we call you?",
+    "onboarding.leave_this_blank": "You can leave this blank",
+
     "onboarding.choose_language": "Choose your language",
     "onboarding.language": "English",
     "onboarding.language_hint": "You can change it later in Settings",
@@ -68,6 +71,9 @@
     "app.title": "Hau {version}",
 
     "onboarding.welcome": "Добро пожаловать в Hau",
+    "onboarding.ask_name": "Как вас называть?",
+    "onboarding.leave_this_blank": "Это поле можно оставить пустым",
+
     "onboarding.choose_language": "Выберите язык",
     "onboarding.language": "Русский",
     "onboarding.language_hint": "Позже язык можно изменить в настройках",
@@ -82,7 +88,7 @@
     "main.your_properties": "Ваши объекты:",
     "main.add_more": "Добавить ещё",
     "property.category_flat": "Категория: Квартира",
-    "property.category_house": "Категория: дом",
+    "property.category_house": "Категория: Дом",
     "property.type_flat": "Квартира",
     "property.type_house": "Дом",
     "property.name": "Название",
@@ -141,8 +147,11 @@
     "main.your_properties": "Сіздің нысандарыңыз:",
     "main.add_more": "Тағы қосу",
 
-    "property.category_flat": "Санат: пәтер",
-    "property.category_house": "Санат: үй",
+    "property.category_flat": "Санат: Пәтер",
+    "onboarding.ask_name": "Сізді қалай атайық?",
+    "onboarding.leave_this_blank": "Сіз мұны бос қалдыра аласыз",
+
+    "property.category_house": "Санат: Үй",
     "property.type_flat": "Пәтер",
     "property.type_house": "Үй",
     "property.name": "Атауы",

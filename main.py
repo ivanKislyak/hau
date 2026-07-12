@@ -11,6 +11,7 @@ from TkToolTip import ToolTip
 from PIL import Image, ImageTk
 import json
 from logic import to_number, calc_tiered_payment, commas_to_dots
+import locale
 
 # Current version
 c_version = '(0.6)'
@@ -40,12 +41,6 @@ needed_columns = {
     'housing_main': 7
 }
 
-lang_dict = {
-    'English': 'en',
-    'Русский': 'ru',
-    'Қазақ': 'kz'
-}
-
 def choose_lang() -> None | str:
     choose_lang_conn = sqlite3.connect(DB_PATH)
     choose_lang_cursor = choose_lang_conn.cursor()
@@ -55,7 +50,18 @@ def choose_lang() -> None | str:
     chosen_lang = u_settings[1] if u_settings else None
 
     if not chosen_lang:
-        return 'en'
+        try:
+            locale.setlocale(locale.LC_ALL, '')
+            system_lang, _ = locale.getlocale()
+        except locale.Error:
+            system_lang = None
+
+        if system_lang and system_lang.startswith('ru'):
+            return 'ru'
+        elif system_lang and system_lang.startswith('kk'):
+            return 'kz'
+        else:
+            return 'en'
     else:
         return chosen_lang
 
@@ -160,6 +166,12 @@ style.configure(
     background=white,
     font=base14
 )
+style.configure('Fancy.TEntry',
+                font=base16,
+                foreground=black,
+                fieldbackground=white,
+                padding=3,
+                )
 
 # Useful notes
 note_for_tiered = lang_u("tooltip.tiered_note")
@@ -314,7 +326,6 @@ def confirm_rate_info(v: StringVar, s_entry, c_frame, tariff_frm, tariff_top, n_
             messagebox.showerror(lang_u("dialog.error_title"), lang_u("error.enter_numeric"), parent=tariff_frm)
             return None
 
-
     elif v.get() == 'Tiered':
         insert_value = [
             str(pos_inf) if er_ch.get() == lang_u("rate.remaining") else er_ch.get().replace(',', '.', 1)
@@ -415,7 +426,33 @@ def choose_username_frame():
     for ch in canvas_fr.winfo_children():
         ch.destroy()
 
+    main_label = ttk.Label(canvas_fr, text=lang_u("onboarding.welcome"), font=base_bold18, foreground=dp_sea,
+                           justify='center')
+    main_label.configure(background=white)
+    main_label.grid(column=0, row=0, pady=(75, 0))
+
+    ask_label = ttk.Label(canvas_fr, text=lang_u("onboarding.ask_name"), font=base16, foreground=black,
+                           justify='left')
+    ask_label.configure(background=white)
+    ask_label.grid(column=0, row=1, pady=(20, 5))
+
+    name_entry = ttk.Entry(canvas_fr, style='Fancy.TEntry', font=base16)
+    name_entry.grid(column=0, row=2, pady=(10, 5))
+
+    ask_label = ttk.Label(canvas_fr, text=lang_u("onboarding.leave_this_blank"), font=base14, foreground='lightgray',
+                           justify='left')
+    ask_label.configure(background=white)
+    ask_label.grid(column=0, row=3, pady=5)
+
+    next_btn_to_language = ttk.Button(canvas_fr, text=lang_u("button.next"), command=choose_lang_frame,
+                              style='CustomHelvetica.TButton')
+    next_btn_to_language.configure(text=lang_u("button.next"))
+    next_btn_to_language.grid(column=0, row=4)
+
 def choose_lang_frame():
+    for ch in canvas_fr.winfo_children():
+        ch.destroy()
+
     cl = StringVar()
 
     main_label = ttk.Label(canvas_fr, text=lang_u("onboarding.choose_language"), font=base_bold18, foreground=dp_sea,
@@ -424,18 +461,18 @@ def choose_lang_frame():
     main_label.grid(column=0, row=0, pady=(75, 0))
 
     eng_r_btn = ttk.Radiobutton(canvas_fr, text='English', style='CustomHelvetica.TRadiobutton',
-                                variable=cl, value='en', command=lambda v=cl: set_lang(v.get(), main_label, lets_add_btn))
+                                variable=cl, value='en', command=lambda v=cl: set_lang(v.get(), main_label, next_btn))
     eng_r_btn.grid(column=0, row=1, padx=5, pady=5)
 
     ru_r_btn = ttk.Radiobutton(canvas_fr, text='Русский', style='CustomHelvetica.TRadiobutton',
-                               variable=cl, value='ru', command=lambda v=cl: set_lang(v.get(), main_label, lets_add_btn))
+                               variable=cl, value='ru', command=lambda v=cl: set_lang(v.get(), main_label, next_btn))
     ru_r_btn.grid(column=0, row=2, padx=5, pady=5)
 
     kz_r_btn = ttk.Radiobutton(canvas_fr, text='Қазақ', style='CustomHelvetica.TRadiobutton',
-                               variable=cl, value='kz', command=lambda v=cl: set_lang(v.get(), main_label, lets_add_btn))
+                               variable=cl, value='kz', command=lambda v=cl: set_lang(v.get(), main_label, next_btn))
     kz_r_btn.grid(column=0, row=3, padx=5, pady=5)
 
-    lets_add_btn = ttk.Button(canvas_fr, text=lang_u("button.next"), command=refresh_cards,
+    next_btn = ttk.Button(canvas_fr, text=lang_u("button.next"), command=refresh_cards,
                               style='CustomHelvetica.TButton')
 
 # Loading real estate listings on the home screen
@@ -463,12 +500,13 @@ def refresh_cards() -> None:
 
     for ch in canvas_fr.winfo_children():
         ch.destroy()
+
     with sqlite3.connect(DB_PATH) as sql_conn:
         cursor = sql_conn.cursor()
         cursor.execute("""SELECT * FROM properties""")
 
         if not check_for_new_user():
-            choose_lang_frame()
+            choose_username_frame()
         else:
             if not cursor.fetchall():
                 main_label = ttk.Label(canvas_fr, text=lang_u("main.no_properties"), font=base_bold18, foreground=dp_sea, justify='center')
