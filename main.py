@@ -1465,10 +1465,19 @@ def new_property(_event=None):
                     vs.set('Tiered')
 
                     separated_values = result_get_v[needed_columns[value_h]].split(separator)
+
+                    while len([w for w in c_frame.winfo_children()
+                               if isinstance(w, ttk.Entry)]) < len(separated_values):
+                        add_more(c_btn)
+
                     entries = [w for w in c_frame.winfo_children() if isinstance(w, ttk.Entry)]
 
                     for widget, separated_value in zip(entries, separated_values):
-                        widget.insert(0, separated_value)
+                        if separated_value == str(pos_inf):
+                            infinity_btn.grid(row=widget.grid_info()['row'], column=0, padx=5, pady=5)
+                            rest_counting(infinity_btn, c_frame)
+                        else:
+                            widget.insert(0, separated_value)
 
         flat_or_tiered(vs)
 
