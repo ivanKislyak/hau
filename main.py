@@ -450,7 +450,7 @@ def choose_username_frame():
     next_btn_to_language.configure(text=lang_u("button.next"))
     next_btn_to_language.grid(column=0, row=4)
 
-def choose_lang_frame(name_entry_v):
+def choose_lang_frame(name_entry_v: str):
     choose_l_conn = sqlite3.connect(DB_PATH)
     choose_l_cursor = choose_l_conn.cursor()
     choose_l_cursor.execute("""INSERT INTO user_settings (name) VALUES (?)""", (name_entry_v,))
@@ -486,6 +486,7 @@ def choose_currency():
         lang_u('combobox.currency_usd'): 'usd',
         lang_u('combobox.currency_rub'): 'rub',
         lang_u('combobox.currency_kzt'): 'kzt',
+        lang_u('combobox.currency_other'): 'other',
     }
 
     for ch in canvas_fr.winfo_children():
@@ -501,10 +502,12 @@ def choose_currency():
     ask_label.configure(background=white)
     ask_label.grid(column=0, row=1, pady=(20, 5))
 
-    property_types = [lang_u('combobox.currency_usd'), lang_u('combobox.currency_rub'), lang_u('combobox.currency_kzt')]
-    property_type = ttk.Combobox(canvas_fr, values=property_types, style='CustomHelvetica.TCombobox',
+    currency_types = [lang_u('combobox.currency_usd'), lang_u('combobox.currency_rub'), lang_u('combobox.currency_kzt'),
+                      lang_u('combobox.currency_other')]
+
+    currency_type = ttk.Combobox(canvas_fr, values=currency_types, style='CustomHelvetica.TCombobox',
                                  font=base18, state='readonly', justify='center')
-    property_type.grid(column=0, row=2, pady=10, columnspan=3)
+    currency_type.grid(column=0, row=2, pady=10, columnspan=3)
 
     try:
         locale.setlocale(locale.LC_ALL, '')
@@ -513,13 +516,13 @@ def choose_currency():
         system_lang = None
 
     if system_lang and system_lang.startswith('ru'):
-        property_type.current(1)
+        currency_type.current(1)
     elif system_lang and system_lang.startswith('kk'):
-        property_type.current(2)
+        currency_type.current(2)
     else:
-        property_type.current(0)
+        currency_type.current(0)
 
-    next_btn_to_language = ttk.Button(canvas_fr, text=lang_u("button.next"), command=lambda: set_currency_data(currency_dict[property_type.get()]),
+    next_btn_to_language = ttk.Button(canvas_fr, text=lang_u("button.next"), command=lambda: set_currency_data(currency_dict[currency_type.get()]),
                               style='CustomHelvetica.TButton')
     next_btn_to_language.configure(text=lang_u("button.next"))
     next_btn_to_language.grid(column=0, row=4)
@@ -531,6 +534,109 @@ def set_currency_data(currency_type: str):
     choose_l_conn.commit()
 
     return refresh_cards()
+
+def save_us_info(name_info: str, lang_info: str, currency_info: str, u_set_tl: Toplevel):
+    save_us_conn = sqlite3.connect(DB_PATH)
+    save_us_cursor = save_us_conn.cursor()
+    save_us_cursor.execute("""UPDATE user_settings set (name, language, currency) = (?, ?, ?)""", (name_info, lang_info, currency_info))
+    save_us_conn.commit()
+    u_set_tl.destroy()
+    refresh_cards()
+
+def open_user_settings():
+    u_set = Toplevel(root)
+    u_set.focus_force()
+    u_set.title(lang_u("window.settings.title", version=c_version))
+    u_set.minsize(500, 450)
+    u_set.configure(bg=white)
+    u_set.columnconfigure(0, weight=1)
+    u_set.rowconfigure(0, weight=1)
+
+    u_set_width, u_set_height = 500, 450
+    u_set_screen_width = u_set.winfo_screenwidth()
+    u_set_screen_height = u_set.winfo_screenheight()
+    u_set_x = (u_set_screen_width - u_set_width) // 2
+    u_set_y = (u_set_screen_height - u_set_height) // 2
+    u_set.geometry(f"{u_set_width}x{u_set_height}+{u_set_x}+{u_set_y}")
+
+    currency_dict = {
+        lang_u('combobox.currency_usd'): 'usd',
+        lang_u('combobox.currency_rub'): 'rub',
+        lang_u('combobox.currency_kzt'): 'kzt',
+        lang_u('combobox.currency_other'): 'other',
+    }
+
+    language_dict = {
+        'English': 'en',
+        'Русский': 'ru',
+        'Қазақ': 'kz',
+
+    }
+
+    open_us_conn = sqlite3.connect(DB_PATH)
+    open_us_cursor = open_us_conn.cursor()
+    open_us_cursor.execute("""SELECT * FROM user_settings""")
+    user_info = open_us_cursor.fetchone()
+
+    us_frm = tk.Frame(u_set, bg=white)
+    us_frm.grid(row=0, column=0)
+
+    u_set_label = ttk.Label(us_frm, text=lang_u("settings.main_label"), font=base_bold18, foreground=dp_sea,
+                           justify='center')
+    u_set_label.configure(background=white)
+    u_set_label.grid(row=0, column=0, padx=5, pady=5, columnspan=2)
+
+    u_set_name_l = ttk.Label(us_frm, text=lang_u("settings.name_label"), font=base16, foreground=black, background=white,
+                           justify='center')
+    u_set_name_l.grid(row=1, column=0, padx=5, pady=5)
+
+    u_set_name_entry = ttk.Entry(us_frm, font=base14, foreground=black, background=white)
+    u_set_name_entry.insert(0, user_info[0])
+    u_set_name_entry.grid(row=1, column=1, padx=5, pady=5)
+
+    u_set_lang_l = ttk.Label(us_frm, text=lang_u("settings.lang_label"), font=base16, foreground=black, background=white,
+                           justify='center')
+    u_set_lang_l.grid(row=2, column=0, padx=5, pady=5)
+
+    language_types = ['English', 'Русский', 'Қазақ']
+
+    language_type = ttk.Combobox(us_frm, values=language_types, style='CustomHelvetica.TCombobox',
+                                 font=base18, state='readonly', justify='center')
+    language_type.grid(row=2, column=1, pady=10)
+
+    current_language = 0
+
+    if user_info[1] == 'ru':
+        current_language = 1
+    elif user_info[1] == 'kz':
+        current_language = 2
+
+    language_type.current(current_language)
+
+    u_set_currency_l = ttk.Label(us_frm, text=lang_u("settings.currency_label"), font=base16, foreground=black, background=white,
+                           justify='center')
+    u_set_currency_l.grid(row=3, column=0, padx=5, pady=5)
+
+    currency_types = [lang_u('combobox.currency_usd'), lang_u('combobox.currency_rub'), lang_u('combobox.currency_kzt'),
+                      lang_u('combobox.currency_other')]
+
+    currency_type = ttk.Combobox(us_frm, values=currency_types, style='CustomHelvetica.TCombobox',
+                                 font=base18, state='readonly', justify='center')
+    currency_type.grid(row=3, column=1, pady=10)
+
+    current_currency = 3
+
+    if user_info[2] == 'usd':
+        current_currency = 0
+    elif user_info[2] == 'rub':
+        current_currency = 1
+    elif user_info[2] == 'kzt':
+        current_currency = 2
+
+    currency_type.current(current_currency)
+
+    save_us_btn = ttk.Button(us_frm, text='Save', style='CustomHelvetica.TButton', command=lambda: save_us_info(u_set_name_entry.get(), language_dict[language_type.get()], currency_dict[currency_type.get()], u_set))
+    save_us_btn.grid(row=4, column=0, columnspan=2, pady=10)
 
 # Loading real estate listings on the home screen
 def refresh_cards() -> None:
@@ -562,7 +668,7 @@ def refresh_cards() -> None:
         cursor = sql_conn.cursor()
         cursor.execute("""SELECT * FROM properties""")
 
-        user_settings_btn = ttk.Button(canvas_fr, image=profile_img, style='CustomHelvetica.TButton')
+        user_settings_btn = ttk.Button(canvas_fr, image=profile_img, style='CustomHelvetica.TButton', command=open_user_settings)
         user_settings_btn.grid(column=0, row=0, sticky='e', columnspan=2, padx=(10, 25), pady=(15, 0))
 
         if not check_for_new_user():
@@ -571,7 +677,7 @@ def refresh_cards() -> None:
             if not cursor.fetchall():
                 main_label = ttk.Label(canvas_fr, text=lang_u("main.no_properties"), font=base_bold18, foreground=dp_sea, justify='center')
                 main_label.configure(background=white)
-                main_label.grid(column=0, row=0, pady=(75, 0))
+                main_label.grid(column=0, row=0, pady=(75, 5))
 
                 lets_add_btn = ttk.Button(canvas_fr, text=lang_u("main.lets_add"), command=new_property, style='CustomHelvetica.TButton')
                 lets_add_btn.grid(column=0, row=1)

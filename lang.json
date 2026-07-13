@@ -24,6 +24,7 @@
     "combobox.currency_usd": "$ USD – Dollars",
     "combobox.currency_rub": "₽ RUB – Rubles",
     "combobox.currency_kzt": "₸ KZT – Tenge",
+    "combobox.currency_other": "Other",
 
     "label.welcome_name": "Good afternoon, {name}!",
 
@@ -31,6 +32,13 @@
     "window.edit_property.title": "Updating values for {property_name}",
     "window.add_tariff.title": "Hau {version} - tariff for {utility}",
     "window.edit_tariff.title": "Hau {version} - changing tariff for {utility}",
+    "window.settings.title": "Settings",
+
+    "settings.main_label": "Profile & preferences",
+    "settings.name_label": "Name",
+    "settings.lang_label": "Language",
+    "settings.currency_label": "Currency",
+
     "main.no_properties": "No properties found",
     "main.lets_add": "Let's add!",
     "main.your_properties": "Your properties:",
@@ -101,6 +109,13 @@
     "window.edit_property.title": "Обновление показаний: {property_name}",
     "window.add_tariff.title": "Hau {version} — тариф для: {utility}",
     "window.edit_tariff.title": "Hau {version} — изменение тарифа для: {utility}",
+    "window.settings.title": "Настройки",
+
+    "settings.main_label": "Профиль и настройки",
+    "settings.name_label": "Имя",
+    "settings.lang_label": "Язык",
+    "settings.currency_label": "Валюта",
+
     "main.no_properties": "Объекты не найдены",
     "main.lets_add": "Добавить первый объект",
     "main.your_properties": "Ваши объекты:",
@@ -168,6 +183,12 @@
     "window.edit_property.title": "Көрсеткіштерді жаңарту: {property_name}",
     "window.add_tariff.title": "Hau {version} — {utility} үшін тариф",
     "window.edit_tariff.title": "Hau {version} — {utility} тарифін өзгерту",
+    "window.settings.title": "Параметрлер",
+
+    "settings.main_label": "Профиль және баптаулар",
+    "settings.name_label": "Аты",
+    "settings.lang_label": "Тілі",
+    "settings.currency_label": "Валюта",
 
     "main.no_properties": "Нысандар табылмады",
     "main.lets_add": "Бірінші нысанды қосу",
