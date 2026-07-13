@@ -14,7 +14,7 @@ from logic import to_number, calc_tiered_payment, commas_to_dots
 import locale
 
 # Current version
-c_version = '(0.6)'
+c_version = '(0.7)'
 
 # DB
 BASE_DIR = Path(__file__).resolve().parent
@@ -766,6 +766,22 @@ def refresh_cards() -> None:
                                     calc_res += units * t
                                 else:
                                     calc_res += calc_tiered_payment(units, t)
+
+                            cursor.execute("""SELECT * FROM user_settings""")
+                            currency_from_db = cursor.fetchone()[2]
+
+                            currency_to_locale = {
+                                'kzt': 'kk',
+                                'rub': 'ru',
+                                'usd': 'us'
+                            }
+
+                            if currency_from_db.lower() != 'other':
+                                try:
+                                    locale.setlocale(locale.LC_ALL, currency_to_locale[currency_from_db])
+                                    calc_res = locale.currency(calc_res, grouping=True)
+                                except locale.Error:
+                                    pass
 
                             calc_res_lbl = Label(card_fr, text=lang_u("property.payment", amount=calc_res) if calc_res else None, bg=white, fg='green', font=base14)
                             calc_res_lbl.grid(row=rcount, column=2, sticky=E, padx=(0, 10), pady=(15, 0))
