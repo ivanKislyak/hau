@@ -38,6 +38,7 @@
     "settings.name_label": "Name",
     "settings.lang_label": "Language",
     "settings.currency_label": "Currency",
+    "settings.save_btn": "Save",
 
     "main.no_properties": "No properties found",
     "main.lets_add": "Let's add!",
@@ -115,6 +116,7 @@
     "settings.name_label": "Имя",
     "settings.lang_label": "Язык",
     "settings.currency_label": "Валюта",
+    "settings.save_btn": "Сохранить",
 
     "main.no_properties": "Объекты не найдены",
     "main.lets_add": "Добавить первый объект",
@@ -189,6 +191,7 @@
     "settings.name_label": "Аты",
     "settings.lang_label": "Тілі",
     "settings.currency_label": "Валюта",
+    "settings.save_btn": "Сақтау",
 
     "main.no_properties": "Нысандар табылмады",
     "main.lets_add": "Бірінші нысанды қосу",

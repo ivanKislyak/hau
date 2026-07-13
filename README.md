@@ -1,19 +1,46 @@
 # Hau
+![Python](https://img.shields.io/badge/Python-3.10%2B-blue)
+![Status](https://img.shields.io/badge/status-MVP-green)
+![License](https://img.shields.io/badge/license-MIT-lightgrey)
 
-A simple desktop app for tracking utility meter values and tariffs.
+**Hau** is a desktop app for tracking utility meter values, configuring tariffs, and calculating utility payments.
 
-## Requirements
+## Features
+- Add and edit properties
+- Store utility meter values
+- Configure flat and tiered tariffs
+- Use remaining-units logic for tiered tariffs
+- Calculate utility payments automatically
+- Choose interface language on first launch
+- Configure preferred currency
+- Edit user settings later
+- Store data locally in SQLite
 
-- Python 3.10+
+## Screenshots
+### First launch
+![First launch](assets/screenshots/first-launch.png)
+
+### Main screen
+![Main screen](assets/screenshots/main-screen.png)
+
+### Value editor
+![Value editor](assets/screenshots/value-editor.png)
+
+### Tariff editor
+![Tariff editor](assets/screenshots/tariff-editor.png)
+
+## Tech Stack
+- Python
 - Tkinter
+- CustomTkinter
+- SQLite
+- Pillow
+- JSON localization
+- locale formatting
 
 ## Installation
-
 ```bash
 git clone https://github.com/ivanKislyak/hau.git
 cd hau
-python -m venv .venv
-.venv\Scripts\activate
-python -m pip install -r requirements.txt
+pip install -r requirements.txt
 python main.py
-```

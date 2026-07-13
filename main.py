@@ -14,7 +14,7 @@ from logic import to_number, calc_tiered_payment, commas_to_dots
 import locale
 
 # Current version
-c_version = '(0.7)'
+c_version = '(0.8)'
 
 # DB
 BASE_DIR = Path(__file__).resolve().parent
@@ -635,7 +635,7 @@ def open_user_settings():
 
     currency_type.current(current_currency)
 
-    save_us_btn = ttk.Button(us_frm, text='Save', style='CustomHelvetica.TButton', command=lambda: save_us_info(u_set_name_entry.get(), language_dict[language_type.get()], currency_dict[currency_type.get()], u_set))
+    save_us_btn = ttk.Button(us_frm, text=lang_u("settings.save_btn"), style='CustomHelvetica.TButton', command=lambda: save_us_info(u_set_name_entry.get(), language_dict[language_type.get()], currency_dict[currency_type.get()], u_set))
     save_us_btn.grid(row=4, column=0, columnspan=2, pady=10)
 
 # Loading real estate listings on the home screen
