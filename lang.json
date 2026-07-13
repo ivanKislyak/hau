@@ -25,6 +25,8 @@
     "combobox.currency_rub": "₽ RUB – Rubles",
     "combobox.currency_kzt": "₸ KZT – Tenge",
 
+    "label.welcome_name": "Good afternoon, {name}!",
+
     "window.add_property.title": "Hau {version} - adding property",
     "window.edit_property.title": "Updating values for {property_name}",
     "window.add_tariff.title": "Hau {version} - tariff for {utility}",
@@ -93,6 +95,8 @@
     "combobox.currency_rub": "₽ RUB – Рубли",
     "combobox.currency_kzt": "₸ KZT – Тенге",
 
+    "label.welcome_name": "Добрый день, {name}!",
+
     "window.add_property.title": "Hau {version} — добавление объекта",
     "window.edit_property.title": "Обновление показаний: {property_name}",
     "window.add_tariff.title": "Hau {version} — тариф для: {utility}",
@@ -157,6 +161,8 @@
     "combobox.currency_usd": "$ USD – Доллар",
     "combobox.currency_rub": "₽ RUB – Рубль",
     "combobox.currency_kzt": "₸ KZT – Теңге",
+
+    "label.welcome_name": "Қайырлы күн, {name}!",
 
     "window.add_property.title": "Hau {version} — нысан қосу",
     "window.edit_property.title": "Көрсеткіштерді жаңарту: {property_name}",

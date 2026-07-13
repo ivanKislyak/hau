@@ -101,7 +101,7 @@ settings_w_img = return_image("settings_w_r.png", 20, 19)
 settings_wt_img = return_image("settings_wt_r.png", 20, 19)
 infinity_img = return_image("infinity.png", 22, 13)
 return_img = return_image("return.png", 20, 20)
-profile_img = return_image("profile_settings.png", 20, 20)
+profile_img = return_image("profile_settings.png", 16, 20)
 
 # Colors
 dp_sea = '#11384D'
@@ -438,18 +438,24 @@ def choose_username_frame():
 
     name_entry = ttk.Entry(canvas_fr, style='Fancy.TEntry', font=base16)
     name_entry.grid(column=0, row=2, pady=(10, 5))
+    name_entry.bind("<Return>", lambda e: choose_lang_frame(name_entry.get()))
 
-    ask_label = ttk.Label(canvas_fr, text=lang_u("onboarding.leave_this_blank"), font=base14, foreground='lightgray',
+    ask_label = ttk.Label(canvas_fr, text=lang_u("onboarding.leave_this_blank"), font=base14, foreground='#A9A9A9',
                            justify='left')
     ask_label.configure(background=white)
     ask_label.grid(column=0, row=3, pady=5)
 
-    next_btn_to_language = ttk.Button(canvas_fr, text=lang_u("button.next"), command=choose_lang_frame,
+    next_btn_to_language = ttk.Button(canvas_fr, text=lang_u("button.next"), command=lambda: choose_lang_frame(name_entry.get()),
                               style='CustomHelvetica.TButton')
     next_btn_to_language.configure(text=lang_u("button.next"))
     next_btn_to_language.grid(column=0, row=4)
 
-def choose_lang_frame():
+def choose_lang_frame(name_entry_v):
+    choose_l_conn = sqlite3.connect(DB_PATH)
+    choose_l_cursor = choose_l_conn.cursor()
+    choose_l_cursor.execute("""INSERT INTO user_settings (name) VALUES (?)""", (name_entry_v,))
+    choose_l_conn.commit()
+
     for ch in canvas_fr.winfo_children():
         ch.destroy()
 
@@ -476,6 +482,12 @@ def choose_lang_frame():
                               style='CustomHelvetica.TButton')
 
 def choose_currency():
+    currency_dict = {
+        lang_u('combobox.currency_usd'): 'usd',
+        lang_u('combobox.currency_rub'): 'rub',
+        lang_u('combobox.currency_kzt'): 'kzt',
+    }
+
     for ch in canvas_fr.winfo_children():
         ch.destroy()
 
@@ -507,10 +519,18 @@ def choose_currency():
     else:
         property_type.current(0)
 
-    next_btn_to_language = ttk.Button(canvas_fr, text=lang_u("button.next"), command=choose_lang_frame,
+    next_btn_to_language = ttk.Button(canvas_fr, text=lang_u("button.next"), command=lambda: set_currency_data(currency_dict[property_type.get()]),
                               style='CustomHelvetica.TButton')
     next_btn_to_language.configure(text=lang_u("button.next"))
     next_btn_to_language.grid(column=0, row=4)
+
+def set_currency_data(currency_type: str):
+    choose_l_conn = sqlite3.connect(DB_PATH)
+    choose_l_cursor = choose_l_conn.cursor()
+    choose_l_cursor.execute("""UPDATE user_settings set currency = ?""", (currency_type,))
+    choose_l_conn.commit()
+
+    return refresh_cards()
 
 # Loading real estate listings on the home screen
 def refresh_cards() -> None:
@@ -542,6 +562,9 @@ def refresh_cards() -> None:
         cursor = sql_conn.cursor()
         cursor.execute("""SELECT * FROM properties""")
 
+        user_settings_btn = ttk.Button(canvas_fr, image=profile_img, style='CustomHelvetica.TButton')
+        user_settings_btn.grid(column=0, row=0, sticky='e', columnspan=2, padx=(10, 25), pady=(15, 0))
+
         if not check_for_new_user():
             choose_username_frame()
         else:
@@ -555,6 +578,12 @@ def refresh_cards() -> None:
 
                 root.bind("<Return>", new_property)
             else:
+                cursor.execute("""SELECT * FROM user_settings""")
+                user_name_value = lang_u("label.welcome_name", name=cursor.fetchone()[0])
+
+                user_settings_btn = ttk.Label(canvas_fr, text=user_name_value, font=base16, background=white)
+                user_settings_btn.grid(column=0, row=0, sticky='w', columnspan=2, padx=(25, 10), pady=(15, 0))
+
                 main_label = ttk.Label(canvas_fr, text=lang_u("main.your_properties"), font=base_bold18, foreground=dp_sea)
                 main_label.configure(background=white)
                 main_label.grid(column=0, row=1, sticky=NS)
