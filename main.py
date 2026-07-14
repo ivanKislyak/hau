@@ -26,6 +26,12 @@ LANG_PATH = BASE_DIR / "lang.json"
 
 DB_PATH.parent.mkdir(exist_ok=True)
 
+with open(LANG_PATH, "r", encoding="utf-8") as f:
+    C_LANG = json.load(f)
+
+LANGUAGES = C_LANG["meta"]["available_languages"]
+LANGUAGE_CODES = {name: code for code, name in LANGUAGES.items()}
+
 with sqlite3.connect(DB_PATH) as db_sql_conn:
     with open(SCHEMA_PATH, 'r', encoding='utf-8', newline='') as sql_script:
         db_cursor = db_sql_conn.cursor()
@@ -41,33 +47,38 @@ needed_columns = {
     'housing_main': 7
 }
 
-def choose_lang() -> None | str:
-    choose_lang_conn = sqlite3.connect(DB_PATH)
-    choose_lang_cursor = choose_lang_conn.cursor()
-    choose_lang_cursor.execute("""SELECT * FROM user_settings""")
-    u_settings = choose_lang_cursor.fetchone()
+def get_system_language() -> str:
+    try:
+        locale.setlocale(locale.LC_ALL, '')
+        system_lang, _ = locale.getlocale()
+    except locale.Error:
+        system_lang = None
 
-    chosen_lang = u_settings[1] if u_settings else None
+    system_lang = (system_lang or '').lower()
+    language_prefixes = {
+        'english': 'en', 'en': 'en',
+        'ukrainian': 'uk', 'uk': 'uk',
+        'russian': 'ru', 'ru': 'ru',
+        'kazakh': 'kz', 'kk': 'kz',
+        'german': 'de', 'de': 'de',
+        'spanish': 'es', 'es': 'es',
+    }
 
-    if not chosen_lang:
-        try:
-            locale.setlocale(locale.LC_ALL, '')
-            system_lang, _ = locale.getlocale()
-        except locale.Error:
-            system_lang = None
+    for prefix, code in language_prefixes.items():
+        if system_lang.startswith(prefix):
+            return code
 
-        if system_lang and system_lang.startswith('ru'):
-            return 'ru'
-        elif system_lang and system_lang.startswith('kk'):
-            return 'kz'
-        else:
-            return 'en'
-    else:
-        return chosen_lang
+    return 'en'
 
-# Available languages: en, ru, kz
-with open(LANG_PATH, "r", encoding="utf-8") as f:
-    C_LANG = json.load(f)
+
+def choose_lang() -> str:
+    with sqlite3.connect(DB_PATH) as choose_lang_conn:
+        u_settings = choose_lang_conn.execute(
+            "SELECT language FROM user_settings LIMIT 1"
+        ).fetchone()
+
+    chosen_lang = u_settings[0] if u_settings else None
+    return chosen_lang if chosen_lang in LANGUAGES else get_system_language()
 
 def lang_u(key: str, **kwargs) -> str:
     text = C_LANG.get(choose_lang(), C_LANG["en"]).get(key, C_LANG["en"].get(key, key))
@@ -420,7 +431,7 @@ def set_lang(lang_v, label, btn):
 
     label.configure(text=lang_u("onboarding.choose_language"))
     btn.configure(text=lang_u("button.next"))
-    btn.grid(column=0, row=4)
+    btn.grid(column=0, row=len(LANGUAGES) + 1)
 
 def choose_username_frame():
     for ch in canvas_fr.winfo_children():
@@ -466,20 +477,19 @@ def choose_lang_frame(name_entry_v: str):
     main_label.configure(background=white)
     main_label.grid(column=0, row=0, pady=(75, 0))
 
-    eng_r_btn = ttk.Radiobutton(canvas_fr, text='English', style='CustomHelvetica.TRadiobutton',
-                                variable=cl, value='en', command=lambda v=cl: set_lang(v.get(), main_label, next_btn))
-    eng_r_btn.grid(column=0, row=1, padx=5, pady=5)
-
-    ru_r_btn = ttk.Radiobutton(canvas_fr, text='Русский', style='CustomHelvetica.TRadiobutton',
-                               variable=cl, value='ru', command=lambda v=cl: set_lang(v.get(), main_label, next_btn))
-    ru_r_btn.grid(column=0, row=2, padx=5, pady=5)
-
-    kz_r_btn = ttk.Radiobutton(canvas_fr, text='Қазақ', style='CustomHelvetica.TRadiobutton',
-                               variable=cl, value='kz', command=lambda v=cl: set_lang(v.get(), main_label, next_btn))
-    kz_r_btn.grid(column=0, row=3, padx=5, pady=5)
-
     next_btn = ttk.Button(canvas_fr, text=lang_u("button.next"), command=choose_currency,
                               style='CustomHelvetica.TButton')
+
+    for row, (code, name) in enumerate(LANGUAGES.items(), start=1):
+        lang_btn = ttk.Radiobutton(
+            canvas_fr,
+            text=name,
+            style='CustomHelvetica.TRadiobutton',
+            variable=cl,
+            value=code,
+            command=lambda v=cl: set_lang(v.get(), main_label, next_btn),
+        )
+        lang_btn.grid(column=0, row=row, padx=5, pady=5)
 
 def choose_currency():
     currency_dict = {
@@ -509,15 +519,11 @@ def choose_currency():
                                  font=base18, state='readonly', justify='center')
     currency_type.grid(column=0, row=2, pady=10, columnspan=3)
 
-    try:
-        locale.setlocale(locale.LC_ALL, '')
-        system_lang, _ = locale.getlocale()
-    except locale.Error:
-        system_lang = None
+    system_language = get_system_language()
 
-    if system_lang and system_lang.startswith('ru'):
+    if system_language == 'ru':
         currency_type.current(1)
-    elif system_lang and system_lang.startswith('kk'):
+    elif system_language == 'kz':
         currency_type.current(2)
     else:
         currency_type.current(0)
@@ -566,13 +572,6 @@ def open_user_settings():
         lang_u('combobox.currency_other'): 'other',
     }
 
-    language_dict = {
-        'English': 'en',
-        'Русский': 'ru',
-        'Қазақ': 'kz',
-
-    }
-
     open_us_conn = sqlite3.connect(DB_PATH)
     open_us_cursor = open_us_conn.cursor()
     open_us_cursor.execute("""SELECT * FROM user_settings""")
@@ -598,20 +597,13 @@ def open_user_settings():
                            justify='center')
     u_set_lang_l.grid(row=2, column=0, padx=5, pady=5)
 
-    language_types = ['English', 'Русский', 'Қазақ']
+    language_types = list(LANGUAGES.values())
 
     language_type = ttk.Combobox(us_frm, values=language_types, style='CustomHelvetica.TCombobox',
                                  font=base18, state='readonly', justify='center')
     language_type.grid(row=2, column=1, pady=10)
 
-    current_language = 0
-
-    if user_info[1] == 'ru':
-        current_language = 1
-    elif user_info[1] == 'kz':
-        current_language = 2
-
-    language_type.current(current_language)
+    language_type.set(LANGUAGES.get(user_info[1], LANGUAGES['en']))
 
     u_set_currency_l = ttk.Label(us_frm, text=lang_u("settings.currency_label"), font=base16, foreground=black, background=white,
                            justify='center')
@@ -635,7 +627,7 @@ def open_user_settings():
 
     currency_type.current(current_currency)
 
-    save_us_btn = ttk.Button(us_frm, text=lang_u("settings.save_btn"), style='CustomHelvetica.TButton', command=lambda: save_us_info(u_set_name_entry.get(), language_dict[language_type.get()], currency_dict[currency_type.get()], u_set))
+    save_us_btn = ttk.Button(us_frm, text=lang_u("settings.save_btn"), style='CustomHelvetica.TButton', command=lambda: save_us_info(u_set_name_entry.get(), LANGUAGE_CODES[language_type.get()], currency_dict[currency_type.get()], u_set))
     save_us_btn.grid(row=4, column=0, columnspan=2, pady=10)
 
 # Loading real estate listings on the home screen
